@@ -109,21 +109,25 @@ class Shotgun(object):
                 raise ShotgunError('unknown filter %r' % filter_type)
             entities = _filters[filter_type](filter_[0], *filter_[2:])(entities)
         
-        ret = []
+        to_return = []
         for entity in entities:
-            selected = dict(type=entity['type'], id=entity['id'])
+            restricted = dict(type=entity['type'], id=entity['id'])
             for field in fields or ():
+                
+                # If the requested field doesn't exist, just skip it.
                 try:
                     v = entity[field]
                 except KeyError:
-                    pass
+                    continue
+                    
+                # We don't want to return our link, but a copy of it.
+                if isinstance(v, dict):
+                    restricted[field] = v.copy()
                 else:
-                    if isinstance(v, dict):
-                        selected[field] = dict(type=v['type'], id=v['id'])
-                    else:
-                        selected[field] = v
-            ret.append(selected)
-        return ret
+                    restricted[field] = v
+            
+            to_return.append(restricted)
+        return to_return
         
         
     def info(self):

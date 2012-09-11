@@ -13,6 +13,14 @@ def mini_uuid():
 
 class TestCase(BaseTestCase):
     
+    def assertIs(self, a, b):
+        if a is not b:
+            self.fail('%r at 0x%x is not %r at 0x%x' % (type(a), id(a), type(b), id(b)))
+    
+    def assertIsNot(self, a, b):
+        if a is b:
+            self.fail('both are %r at 0x%x' % (type(a), id(a), type(b), id(b)))
+    
     def assertSameEntity(self, a, b):
         errors = []
         
