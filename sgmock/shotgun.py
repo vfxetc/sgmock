@@ -146,9 +146,6 @@ class Shotgun(object):
     def create(self, entity_type, data, return_fields=None):
         """Create an entity of the given type and data; return the new entity."""
         
-        # Set some defaults
-        data['created_at'] = data['updated_at'] = datetime.datetime.now()
-        
         # Reduce all links to the basic forms.
         to_store = {'type': entity_type}
         for k, v in data.iteritems():
@@ -159,13 +156,16 @@ class Shotgun(object):
                 to_store[k] = self._minimal_copy(v)
             else:
                 to_store[k] = v
+         
+        # Set some defaults
+        to_store['created_at'] = to_store['updated_at'] = datetime.datetime.now()
         
         # Store it.
         to_store['id'] = len(self._store[entity_type]) + 1
         self._store[entity_type][to_store['id']] = to_store
         
         # Return only the fields we have been asked to return.
-        return self._minimal_copy(to_store, itertools.chain(to_store.iterkeys(), return_fields or ()))
+        return self._minimal_copy(to_store, itertools.chain(data.iterkeys(), return_fields or ()))
     
     def find_one(self, entity_type, filters, fields=None, order=None, 
         filter_operator=None, retired_only=False):
