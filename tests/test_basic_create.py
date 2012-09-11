@@ -8,9 +8,11 @@ class TestBasicCreate(TestCase):
         type_ = 'Dummy' + mini_uuid().upper()
         spec = dict(name=mini_uuid())
         proj = sg.create(type_, spec)
+        print proj
         self.assertIsNot(spec, proj)
-        self.assertEqual(len(proj), 2)
+        self.assertEqual(len(proj), 3)
         self.assertEqual(proj['type'], type_)
+        self.assertEqual(proj['name'], spec['name'])
         self.assert_(proj['id'])
     
     def test_create_additional_return(self):
