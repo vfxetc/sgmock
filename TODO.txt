@@ -2,9 +2,11 @@
 
 - Batches in transactions.
 
+- Required fields as a substitute for a full schema.
+
 - Common fixtures:
     - pipeline steps
-    - projects (random name)
+    - projects (random timestamped name)
     - sequences ('AA', 'BB', 'CC', 'DD')
     - shots ('AA_001', etc.)
     - tasks (named after the pipeline steps)

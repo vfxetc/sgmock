@@ -4,7 +4,8 @@ import os
 
 import shotgun_api3
 
-from sgmock import Shotgun
+from sgmock import Shotgun, ShotgunError, Fault
+from sgmock import Fixture
 
 
 def mini_uuid():
@@ -12,6 +13,14 @@ def mini_uuid():
 
 
 class TestCase(BaseTestCase):
+    
+    def assertIn(self, key, collection):
+        if key not in collection:
+            self.fail('%r not in %r' % (key, collection))
+    
+    def assertIsInstance(self, instance, types):
+        if not isinstance(instance, types):
+            self.fail('not an instance of %r; %r' % (types, instance))
     
     def assertIs(self, a, b):
         if a is not b:
