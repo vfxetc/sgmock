@@ -25,3 +25,20 @@ class TestLinks(TestCase):
         self.assertEqual(3, len(found_seq))
         self.assertEqual(2, len(found_seq['project']))
         
+        found_seq2 = sg.find('Sequence', [], ['project'])[0]
+        self.assertSameEntity(seq, found_seq2)
+        self.assertIsNot(found_seq, found_seq2)
+        self.assertSameEntity(proj, found_seq2.get('project'))
+        self.assertIsNot(proj, found_seq2.get('project'))
+        self.assertIsNot(found_seq.get('project'), found_seq2.get('project'))
+        
+    def test_scalar_deep_link(self):
+        sg = Shotgun()
+        name = mini_uuid()
+        proj = sg.create('Project', dict(name=name))
+        seq = sg.create('Sequence', dict(code='AA', project=proj))
+        found_seq = sg.find('Sequence', [], ['project.Project.name'])[0]
+        self.assertSameEntity(seq, found_seq)
+        self.assertEqual(3, len(found_seq))
+        self.assertEqual(name, found_seq['project.Project.name'])
+        

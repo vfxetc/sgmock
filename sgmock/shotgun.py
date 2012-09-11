@@ -1,5 +1,6 @@
 import collections
 import copy
+import re
 
 import mock
 import shotgun_api3
@@ -10,6 +11,9 @@ class ShotgunError(Exception):
 
 class Fault(ShotgunError):
     pass
+
+
+_no_arg_sentinel = object()
 
 
 class _IsFilter(object):
@@ -62,17 +66,66 @@ class Shotgun(object):
     
     def _minimal_copy(self, entity, fields=None):
         """Get a minimal representation of the given entity; only type and id."""
+        print '_minimal_copy', fields
         try:
             minimal = dict(type=str(entity['type']), id=int(entity['id']))
         except KeyError:
             raise ShotgunError('entity does not have type and id; %r' % entity)
         for field in fields or ():
             try:
-                minimal[field] = entity[field]
+                v = self._lookup_field(entity, field)
             except KeyError:
-                pass
+                continue
+            if isinstance(v, dict):
+                minimal[field] = self._minimal_copy(v)
+            else:
+                minimal[field] = v
         return minimal
     
+    def _resolve_link(self, link):
+        """Convert a link to a full entity."""
+        try:
+            type_ = link['type']
+            id_ = link['id']
+        except KeyError:
+            raise ShotgunError('entity does not have type and id; %r' % link)
+        try:
+            return self._store[type_][id_]
+        except KeyError:
+            raise ShotgunError('linked entity does not exist; %r' % link)
+    
+    _deep_lookup_re = re.compile(r'^(\w+)\.(\w+)\.([\w.]+)$')
+    
+    def _lookup_field(self, entity, field, default=_no_arg_sentinel):
+        
+        try:
+            return entity[field]
+        except KeyError:
+            pass
+        
+        m = self._deep_lookup_re.match(field)
+        if not m:
+            raise KeyError(field)
+        
+        local_field, link_type, deep_field = m.groups()
+            
+        # Get the link.
+        try:
+            link = entity[local_field]
+        except KeyError:
+            if default is _no_arg_sentinel:
+                raise ShotgunError('entity has no field %r; %r' % (local_field, entity))
+            return default
+            
+        if not isinstance(link, dict):
+            raise ShotgunError('non-entity value for deep linking at %r; %r' % (local_field, entity))
+        if not link['type'] == link_type:
+            raise ShotgunError('deep-link type mismatch; %r is not %r' % (link, link_type))
+            
+        # Go to the next step in the link.
+        linked = self._resolve_link(link)
+        return self._lookup_field(linked, deep_field, default)
+            
     def create(self, entity_type, data, return_fields=None):
         """Create an entity of the given type and data; return the new entity."""
         
@@ -114,25 +167,8 @@ class Shotgun(object):
                 raise ShotgunError('unknown filter %r' % filter_type)
             entities = _filters[filter_type](filter_[0], *filter_[2:])(entities)
         
-        to_return = []
-        for entity in entities:
-            restricted = dict(type=entity['type'], id=entity['id'])
-            for field in fields or ():
-                
-                # If the requested field doesn't exist, just skip it.
-                try:
-                    v = entity[field]
-                except KeyError:
-                    continue
-                    
-                # We don't want to return our link, but a copy of it.
-                if isinstance(v, dict):
-                    restricted[field] = v.copy()
-                else:
-                    restricted[field] = v
-            
-            to_return.append(restricted)
-        return to_return
+        # Return minimal copies.
+        return [self._minimal_copy(entity, fields) for entity in entities]
         
         
     def info(self):

@@ -15,11 +15,11 @@ class TestCase(BaseTestCase):
     
     def assertIs(self, a, b):
         if a is not b:
-            self.fail('%r at 0x%x is not %r at 0x%x' % (type(a), id(a), type(b), id(b)))
+            self.fail('%r at 0x%x is not %r at 0x%x; %r is not %r' % (type(a), id(a), type(b), id(b), a, b))
     
     def assertIsNot(self, a, b):
         if a is b:
-            self.fail('both are %r at 0x%x' % (type(a), id(a), type(b), id(b)))
+            self.fail('both are %r at 0x%x; %r' % (type(a), id(a), a))
     
     def assertSameEntity(self, a, b):
         errors = []
