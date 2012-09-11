@@ -49,7 +49,7 @@ class Shotgun(object):
             if not hasattr(self, name):
                 setattr(self, name, not_implemented)
         
-        self._store = collections.defaultdict(list)
+        self._store = collections.defaultdict(dict)
     
     def connect(self):
         pass
@@ -79,12 +79,12 @@ class Shotgun(object):
             else:
                 to_store[k] = v
         
-        self._store[entity_type].append(to_store)
-        to_store['id'] = len(self._store[entity_type])
+        to_store['id'] = len(self._store[entity_type]) + 1
+        self._store[entity_type][to_store['id']] = to_store
         
         # Return only the fields we have been asked to return.
         ret = dict(type=entity_type, id=to_store['id'])
-        for field in return_fields or []:
+        for field in return_fields or ():
             if field in to_store:
                 ret[field] = to_store[field]
         return ret
@@ -102,14 +102,28 @@ class Shotgun(object):
         filter_operator=None, limit=0, retired_only=False, page=0):
         
         # Wrap the base entities with all of the filters.
-        entities = self._store[entity_type]
+        entities = self._store[entity_type].itervalues()
         for filter_ in filters:
             filter_type = filter_[1]
             if filter_type not in _filters:
                 raise ShotgunError('unknown filter %r' % filter_type)
             entities = _filters[filter_type](filter_[0], *filter_[2:])(entities)
         
-        return list(copy.deepcopy(x) for x in entities)
+        ret = []
+        for entity in entities:
+            selected = dict(type=entity['type'], id=entity['id'])
+            for field in fields or ():
+                try:
+                    v = entity[field]
+                except KeyError:
+                    pass
+                else:
+                    if isinstance(v, dict):
+                        selected[field] = dict(type=v['type'], id=v['id'])
+                    else:
+                        selected[field] = v
+            ret.append(selected)
+        return ret
         
         
     def info(self):

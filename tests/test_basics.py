@@ -9,7 +9,7 @@ class TestNonData(TestCase):
         sg.close()
 
 
-class TestSimpleData(TestCase):
+class TestSimpleCreate(TestCase):
     
     def test_create_default_return(self):
         sg = Shotgun()
@@ -35,10 +35,33 @@ class TestSimpleData(TestCase):
         self.assertEqual(proj['type'], 'Project')
         self.assert_(proj['id'])
         self.assertEqual(proj['name'], name)
+
+
+class TestSimpleFind(TestCase):
     
-    def test_create_and_find_first_by_id(self):
+    def test_create_and_find_only_one_by_name(self):
         sg = Shotgun()
         name = mini_uuid()
         a = sg.create('Project', dict(name=name))
         b = sg.find('Project', [('name', 'is', name)])[0]
         self.assertSameEntity(a, b)
+
+
+class TestLinkedCreate(TestCase):
+    
+    def test_create_sequence(self):
+        sg = Shotgun()
+        proj = sg.create('Project', dict(name=mini_uuid()))
+        seq = sg.create('Sequence', dict(code='AA', project=proj))
+        
+        found_seq = sg.find('Sequence', [])[0]
+        self.assertSameEntity(seq, found_seq)
+        self.assertEqual(2, len(found_seq))
+        
+        found_seq = sg.find('Sequence', [], ['project'])[0]
+        self.assertSameEntity(seq, found_seq)
+        self.assertSameEntity(proj, found_seq.get('project'))
+        self.assertEqual(3, len(found_seq))
+        self.assertEqual(2, len(found_seq['project']))
+        
+        
