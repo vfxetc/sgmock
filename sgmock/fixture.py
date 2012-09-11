@@ -1,32 +1,6 @@
 _required = object()
 
 
-class _Creator(object):
-    
-    _argument_defaults = {
-        'Step': [('short_name', _required)],
-        'Sequence': [('code', _required)],
-        'Shot': [('code', _required)],
-    }
-    
-    def __init__(self, fixture, entity_type):
-        self.fixture = fixture
-        self.entity_type = entity_type
-    
-    def __call__(self, *args, **kwargs):
-        specs = self._argument_defaults.get(self.entity_type, ())
-        for name, default in specs:
-            if name not in kwargs:
-                if not args:
-                    if default is _required:
-                        raise TypeError('%s missing required %s' % (self.entity_type, name))
-                    kwargs[name] = default
-                else:
-                    kwargs[name] = args[0]
-                    args = args[1:]
-        return self.fixture.shotgun.create(self.entity_type, kwargs, kwargs.keys())
-
-
 class Fixture(object):
     
     def __init__(self, shotgun):
@@ -74,3 +48,79 @@ class Fixture(object):
         ):
             steps[short_name] = self.find_or_create('Step', dict(short_name=short_name))
         return steps
+
+
+class _Creator(object):
+    
+    def __init__(self, fixture, entity_type, pre_create_callback=None):
+        self.fixture = fixture
+        self.entity_type = entity_type
+        self.pre_create_callback = pre_create_callback
+        
+    def __call__(self, *args, **kwargs):
+        constructor = _entity_types.get(self.entity_type, _Entity)
+        for name, default in constructor._argument_defaults:
+            if name not in kwargs:
+                if not args:
+                    if default is _required:
+                        raise TypeError('%s missing required %s' % (self.entity_type, name))
+                    kwargs[name] = default
+                else:
+                    kwargs[name] = args[0]
+                    args = args[1:]
+        if self.pre_create_callback:
+            self.pre_create_callback(self.entity_type, kwargs)
+        raw = self.fixture.shotgun.create(self.entity_type, kwargs, kwargs.keys())
+        return constructor(self.fixture, raw)
+
+
+class _Entity(dict):
+    
+    _argument_defaults = []
+    _parent = None
+    _backrefs = {}
+    
+    def __init__(self, fixture, *args, **kwargs):
+        super(_Entity, self).__init__(*args, **kwargs)
+        self.fixture = fixture
+    
+    def _pre_create(self, entity_type, data):
+        data[self._backrefs[entity_type]] = self.minimal
+    
+    def __getattr__(self, name):
+        if name[0].isupper() and name in self._backrefs:
+            return _Creator(self.fixture, name, self._pre_create)
+        raise AttributeError(name)
+    
+    @property
+    def minimal(self):
+        return dict(type=self['type'], id=self['id'])
+
+
+class _Project(_Entity):
+    _argument_defaults = [('name', _required)]
+    _backrefs = {'Sequence': 'project'}
+
+class _Sequence(_Entity):
+    _argument_defaults = [('code', _required)]
+    _parent = 'project'
+    _backrefs = {'Shot': 'sg_sequence'}
+
+class _Shot(_Entity):
+    _argument_defaults = [('code', _required)]
+    _parent = 'sg_sequence'
+    _backrefs = {'Task': 'entity'}
+
+class _Task(_Entity):
+    _argument_defaults = [('title', _required)]
+    _parent = 'entity'
+
+class _Step(_Entity):
+    _argument_defaults = [('short_name', _required)]
+
+
+_entity_types = dict(
+    (name[1:], value)
+    for name, value in globals().iteritems()
+    if isinstance(value, type) and issubclass(value, _Entity)
+) 

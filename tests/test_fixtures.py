@@ -4,6 +4,7 @@ from common import *
 class TestFixtures(TestCase):
     
     def test_find_or_create(self):
+        
         sg = Shotgun()
         fix = Fixture(sg)
         
@@ -43,4 +44,29 @@ class TestFixtures(TestCase):
         anm = sg.find_one('Step', [('short_name', 'is', 'Anm')])
         self.assertSameEntity(steps['Anm'], anm)
         self.assertIsNot(steps['Anm'], anm)
+    
+    def test_shot_task_chain(self):
         
+        sg = Shotgun()
+        fix = Fixture(sg)
+        
+        proj = fix.Project(mini_uuid())
+        print proj
+        seq = proj.Sequence('AA')
+        print seq
+        shot = seq.Shot('AA_001')
+        print shot
+        step = fix.find_or_create('Step', short_code='Anim')
+        print step
+        task = shot.Task('Animate something', step=step)
+        print task
+        
+        self.assertEqual(task['type'], 'Task')
+        self.assertEqual(shot['type'], 'Shot')
+        self.assertEqual(seq['type'], 'Sequence')
+        self.assertEqual(proj['type'], 'Project')
+        
+        self.assertSameEntity(task['step'], step)
+        self.assertSameEntity(task['entity'], shot)
+        self.assertSameEntity(shot['sg_sequence'], seq)
+        self.assertSameEntity(seq['project'], proj)
