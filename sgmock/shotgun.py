@@ -1,6 +1,7 @@
 import collections
 import copy
 import re
+import itertools
 
 import mock
 import shotgun_api3
@@ -86,7 +87,7 @@ class Shotgun(object):
             minimal = dict(type=str(entity['type']), id=int(entity['id']))
         except KeyError:
             raise ShotgunError('entity does not have type and id; %r' % entity)
-        for field in fields or ():
+        for field in itertools.chain('name', fields or ()):
             try:
                 v = self._lookup_field(entity, field)
             except KeyError:
@@ -160,7 +161,7 @@ class Shotgun(object):
         self._store[entity_type][to_store['id']] = to_store
         
         # Return only the fields we have been asked to return.
-        return self._minimal_copy(to_store, return_fields)
+        return self._minimal_copy(to_store, itertools.chain(to_store.iterkeys(), return_fields or ()))
     
     def find_one(self, entity_type, filters, fields=None, order=None, 
         filter_operator=None, retired_only=False):
