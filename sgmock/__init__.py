@@ -1,1 +1,1 @@
-from .shotgun import Shotgun
+from .shotgun import Shotgun, ShotgunError, Fault

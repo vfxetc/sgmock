@@ -10,6 +10,7 @@ from sgmock import Shotgun
 def mini_uuid():
     return os.urandom(4).encode('hex')
 
+
 class TestCase(BaseTestCase):
     
     def assertSameEntity(self, a, b):
@@ -20,7 +21,7 @@ class TestCase(BaseTestCase):
                 errors.append('%s is a %r, not dict: %r' % (loc, type(x), x))
                 continue
             if 'type' not in x:
-                errors.append('%s %r has' % (loc, x))
+                errors.append('%s has no type: %r' % (loc, x))
             if 'id' not in x:
                 errors.append('%s has no id: %r' % (loc, x))
         
