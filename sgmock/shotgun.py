@@ -12,15 +12,6 @@ class Fault(ShotgunError):
     pass
 
 
-_filters = {}
-def _register_filter(operator):
-    def _as_filter(func):
-        _filters[operator] = func
-        return func
-    return _as_filter
-
-
-@_register_filter('is')
 class _IsFilter(object):
     
     def __init__(self, field, value):
@@ -31,6 +22,11 @@ class _IsFilter(object):
         for entity in entity_iter:
             if entity.get(self.field) == self.value:
                 yield entity
+
+
+_filters = {
+    'is': _IsFilter
+}
 
 
 class Shotgun(object):
