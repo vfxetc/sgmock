@@ -5,13 +5,27 @@ class Fixture(object):
     
     def __init__(self, shotgun):
         self.shotgun = shotgun
+        self.created = []
     
     def __getattr__(self, name):
         if name[0].isupper():
             return _Creator(self, name)
         else:
-            raise AttributeError(name)
-    
+            return getattr(self.shotgun, name)
+            
+    def create(self, *args, **kwargs):
+        x = self.shotgun.create(*args, **kwargs)
+        self.created.append((x['type'], x['id']))
+        return x
+        
+    def delete_all(self):
+        self.shotgun.batch([dict(
+            request_type='delete',
+            entity_type=type_,
+            entity_id=id_,
+        ) for type_, id_ in reversed(self.created)])
+        self.created = []
+        
     def find_or_create(self, entity_type, datum=None, **kwargs):
         
         if datum and kwargs:
@@ -36,7 +50,7 @@ class Fixture(object):
                 continue
             data = data.copy()
             data.pop('id', None)
-            result.append(self.shotgun.create(entity_type, data, data.keys()))
+            result.append(self.create(entity_type, data, data.keys()))
         
         return result[0] if is_single else result
     
@@ -72,7 +86,7 @@ class _Creator(object):
                     args = args[1:]
         if self.pre_create_callback:
             self.pre_create_callback(self.entity_type, kwargs)
-        raw = self.fixture.shotgun.create(self.entity_type, kwargs, kwargs.keys())
+        raw = self.fixture.create(self.entity_type, kwargs, kwargs.keys())
         return constructor(self.fixture, raw)
 
 

@@ -3,6 +3,18 @@ from common import *
 
 class TestFixtures(TestCase):
     
+    def test_proxy_commands(self):
+        sg = Shotgun()
+        fix = Fixture(sg)
+        
+        fix.create('Project', dict(name='this is the name'))
+        self.assertEqual(len(fix.created), 1)
+        self.assertEqual(sum(len(x) for x in sg._store.itervalues()), 1)
+        
+        fix.delete_all()
+        self.assertEqual(len(fix.created), 0)
+        self.assertEqual(sum(len(x) for x in sg._store.itervalues()), 0)
+    
     def test_find_or_create(self):
         
         sg = Shotgun()
@@ -64,3 +76,22 @@ class TestFixtures(TestCase):
         self.assertSameEntity(task['entity'], shot)
         self.assertSameEntity(shot['sg_sequence'], seq)
         self.assertSameEntity(seq['project'], proj)
+    
+    
+    def test_shot_task_chain_cleanup(self):
+        sg = Shotgun()
+        fix = Fixture(sg)
+        
+        proj = fix.Project(mini_uuid())
+        seq = proj.Sequence('AA')
+        shot = seq.Shot('AA_001')
+        step = fix.find_or_create('Step', short_code='Anim')
+        task = shot.Task('Animate something', step=step)
+        
+        self.assertEqual(len(fix.created), 5)
+        self.assertEqual(sum(len(x) for x in sg._store.itervalues()), 5)
+        
+        fix.delete_all()
+        self.assertEqual(len(fix.created), 0)
+        self.assertEqual(sum(len(x) for x in sg._store.itervalues()), 0)
+    
