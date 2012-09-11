@@ -88,13 +88,13 @@ class Shotgun(object):
             minimal = dict(type=str(entity['type']), id=int(entity['id']))
         except KeyError:
             raise ShotgunError('entity does not have type and id; %r' % entity)
-        for field in itertools.chain('name', fields or ()):
+        for field in fields or ():
             try:
                 v = self._lookup_field(entity, field)
             except KeyError:
                 continue
             if isinstance(v, dict):
-                minimal[field] = self._minimal_copy(v)
+                minimal[field] = self._minimal_copy(self._resolve_link(v), ['name'])
             else:
                 minimal[field] = v
         return minimal
