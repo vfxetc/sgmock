@@ -28,8 +28,21 @@ class _IsFilter(object):
                 yield entity
 
 
+class _InFilter(object):
+    
+    def __init__(self, field, *values):
+        self.field = field
+        self.values = set(values)
+    
+    def __call__(self, entity_iter):
+        for entity in entity_iter:
+            if entity.get(self.field) in self.values:
+                yield entity
+
+
 _filters = {
-    'is': _IsFilter
+    'is': _IsFilter,
+    'in': _InFilter,
 }
 
 
