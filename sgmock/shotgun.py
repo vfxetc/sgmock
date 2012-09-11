@@ -69,7 +69,6 @@ class Shotgun(object):
     
     def _minimal_copy(self, entity, fields=None):
         """Get a minimal representation of the given entity; only type and id."""
-        print '_minimal_copy', fields
         try:
             minimal = dict(type=str(entity['type']), id=int(entity['id']))
         except KeyError:
