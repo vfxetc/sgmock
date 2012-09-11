@@ -43,10 +43,12 @@ class Fixture(object):
     def default_steps(self):
         """Return a dict mapping short_names to entities for a default set of steps."""
         steps = {}
-        for short_name in ('Client', 'Online', 'Roto', 'MM', 'Anm', 'FX',
+        for name in ('Client', 'Online', 'Roto', 'MM', 'Anm', 'FX',
             'Light', 'Comp', 'Art', 'Model', 'Rig', 'Surface'
         ):
-            steps[short_name] = self.find_or_create('Step', dict(short_name=short_name))
+            steps[name] = self.find_or_create('Step', dict(
+                name=name,
+                short_name=name))
         return steps
 
 

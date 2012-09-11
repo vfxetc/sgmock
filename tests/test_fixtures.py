@@ -28,18 +28,12 @@ class TestFixtures(TestCase):
         steps = fix.default_steps()
         
         # These are the default steps that we want to see.
-        self.assertIn('Anm', steps)
-        self.assertIn('Art', steps)
-        self.assertIn('Client', steps)
-        self.assertIn('Comp', steps)
-        self.assertIn('FX', steps)
-        self.assertIn('Light', steps)
-        self.assertIn('MM', steps)
-        self.assertIn('Model', steps)
-        self.assertIn('Online', steps)
-        self.assertIn('Rig', steps)
-        self.assertIn('Roto', steps)
-        self.assertIn('Surface', steps)
+        for name in ('Client', 'Online', 'Roto', 'MM', 'Anm', 'FX',
+            'Light', 'Comp', 'Art', 'Model', 'Rig', 'Surface'
+        ):
+            self.assertIn(name, steps)
+            self.assertEqual(name, steps[name]['name'])
+            self.assertEqual(name, steps[name]['short_name'])
         
         anm = sg.find_one('Step', [('short_name', 'is', 'Anm')])
         self.assertSameEntity(steps['Anm'], anm)
