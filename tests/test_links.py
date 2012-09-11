@@ -23,7 +23,8 @@ class TestLinks(TestCase):
         self.assertSameEntity(proj, found_seq.get('project'))
         self.assertIsNot(proj, found_seq.get('project'))
         self.assertEqual(3, len(found_seq))
-        self.assertEqual(2, len(found_seq['project']))
+        self.assertEqual(3, len(found_seq['project']))
+        self.assertIn('name', found_seq['project'])
         
         found_seq2 = sg.find('Sequence', [], ['project'])[0]
         self.assertSameEntity(seq, found_seq2)
