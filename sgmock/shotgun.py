@@ -56,6 +56,9 @@ class Shotgun(object):
     
     def close(self):
         pass
+
+    def info(self):
+        return {'version': [4, 0, 0]}
     
     def _entity_exists(self, entity):
         """Return True if the referenced entity does exist in our store."""
@@ -170,8 +173,34 @@ class Shotgun(object):
         # Return minimal copies.
         return [self._minimal_copy(entity, fields) for entity in entities]
         
+    _batch_type_args = {
+        'create': ('entity_type', 'data'),
+        'update': ('entity_type', 'entity_id', 'data'),
+        'delete': ('entity_type', 'entity_id'),
+    }
+    
+    def batch(self, requests):
+        responses = []
         
-    def info(self):
-        return {'version': [4, 0, 0]}
+        for request in requests:
+            
+            try:
+                type_ = request['request_type']
+            except KeyError:
+                raise ShotgunError('missing request_type; %r' % request)
+            
+            try:
+                arg_names = self._batch_type_args[type_]
+            except KeyError:
+                raise ShotgunError('unknown request_type %r; %r' % (type_, request))
+            
+            try:
+                args = tuple(request[name] for name in arg_names)
+            except KeyError, e:
+                raise ShotgunError('%s request missing %s; %r' % (type_, e.args[0], request))
+            
+            responses.append(getattr(self, type_)(*args))
+        
+        return responses
     
     

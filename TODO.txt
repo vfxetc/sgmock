@@ -1,7 +1,10 @@
-- Deep linking; e.g. project.Project.name
-    - Do not allow them in create.
-    - shotgun._get_linked(entity_link)
-    - shotgun._minimal(entity)
-    - shotgun._get_field(entity, name, default=sentinel)
-
 - Special-case ('id', 'is', x) and ('id', 'in', *x) filters.
+
+- Batches in transactions.
+
+- Common fixtures:
+    - pipeline steps
+    - projects (random name)
+    - sequences ('AA', 'BB', 'CC', 'DD')
+    - shots ('AA_001', etc.)
+    - tasks (named after the pipeline steps)
