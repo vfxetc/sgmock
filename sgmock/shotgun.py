@@ -53,37 +53,46 @@ class Shotgun(object):
     def close(self):
         pass
     
-    def _entity_exists(self, type_, id_):
-        return type_ in self._store and id_ in self._store[type_]
+    def _entity_exists(self, entity):
+        """Return True if the referenced entity does exist in our store."""
+        try:
+            return entity['id'] in self._store[entity['type']]
+        except KeyError:
+            raise ShotgunError('entity does not have type and id; %r' % entity)
+    
+    def _minimal_copy(self, entity, fields=None):
+        """Get a minimal representation of the given entity; only type and id."""
+        try:
+            minimal = dict(type=str(entity['type']), id=int(entity['id']))
+        except KeyError:
+            raise ShotgunError('entity does not have type and id; %r' % entity)
+        for field in fields or ():
+            try:
+                minimal[field] = entity[field]
+            except KeyError:
+                pass
+        return minimal
     
     def create(self, entity_type, data, return_fields=None):
+        """Create an entity of the given type and data; return the new entity."""
         
         # Reduce all links to the basic forms.
         to_store = {'type': entity_type}
         for k, v in data.iteritems():
             if isinstance(v, dict):
-                try:
-                    type_ = str(v['type'])
-                    id_ = int(v['id'])
-                except KeyError:
-                    raise ShotgunError('linked entity must have type and id')
-                else:
-                    # Make sure the link exists.
-                    if not self._entity_exists(type_, id_):
-                        raise ShotgunError('linked entity %s:%d does not exist' % (type_, id_))
-                    to_store[k] = dict(type=type_, id=id_)
+                # Make sure the link exists.
+                if not self._entity_exists(v):
+                    raise ShotgunError('linked entity %r does not exist' % self._minimal(v))
+                to_store[k] = self._minimal_copy(v)
             else:
                 to_store[k] = v
         
+        # Store it.
         to_store['id'] = len(self._store[entity_type]) + 1
         self._store[entity_type][to_store['id']] = to_store
         
         # Return only the fields we have been asked to return.
-        ret = dict(type=entity_type, id=to_store['id'])
-        for field in return_fields or ():
-            if field in to_store:
-                ret[field] = to_store[field]
-        return ret
+        return self._minimal_copy(to_store, return_fields)
     
     def find_one(self, entity_type, filters, fields=None, order=None, 
         filter_operator=None, retired_only=False):
