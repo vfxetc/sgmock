@@ -3,14 +3,28 @@ from common import *
 
 class TestFixtures(TestCase):
     
-    def test_default_pipeline(self):
+    def test_find_or_create(self):
+        sg = Shotgun()
+        fix = Fixture(sg)
+        
+        anim = fix.find_or_create('Step', short_code='Anim')
+        self.assertEqual('Step', anim['type'])
+        self.assertEqual(3, len(anim))
+        self.assert_(anim['id'])
+        self.assertEqual(anim['short_code'], 'Anim')
+        
+        anim2 = fix.find_or_create('Step', short_code='Anim')
+        self.assertSameEntity(anim, anim2)
+        self.assertIsNot(anim, anim2)
+        
+    def test_default_steps(self):
         
         sg = Shotgun()
         fix = Fixture(sg)
         
         self.assertEqual([], sg.find('Step', []))
         
-        steps = fix.pipeline_steps()
+        steps = fix.default_steps()
         
         # These are the default steps that we want to see.
         self.assertIn('Anm', steps)

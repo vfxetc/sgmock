@@ -4,9 +4,20 @@
 
 - Required fields as a substitute for a full schema.
 
+- Basic schema.
+
 - Common fixtures:
     - pipeline steps
     - projects (random timestamped name)
     - sequences ('AA', 'BB', 'CC', 'DD')
     - shots ('AA_001', etc.)
     - tasks (named after the pipeline steps)
+    - fix.create('Step', *args, **kwargs)
+        - __class__ -> the class to use
+    - fix.default_args = {
+        'Step': [
+            ('short_name', _required)]
+    }
+    - fix.Step('short_name', **kwargs) -> fix.create('Step',
+    - fix.Project(...).Sequence automatically links up
+    - short_name=short_name, **kwargs)
