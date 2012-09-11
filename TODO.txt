@@ -1,0 +1,6 @@
+- Deep linking; e.g. project.Project.name
+    - Do not allow them in create.
+    - shotgun._get_linked(entity_link)
+    - shotgun._get_field(entity, name, default=sentinel)
+
+- Special-case ('id', 'is', x) and ('id', 'in', *x) filters.
