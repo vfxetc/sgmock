@@ -1,0 +1,1 @@
+-e git://github.com/shotgunsoftware/python-api.git@v3.0.8#egg=shotgun_api3
