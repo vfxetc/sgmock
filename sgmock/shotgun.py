@@ -1,5 +1,6 @@
 import collections
 import copy
+import datetime
 import re
 import itertools
 
@@ -145,6 +146,9 @@ class Shotgun(object):
     def create(self, entity_type, data, return_fields=None):
         """Create an entity of the given type and data; return the new entity."""
         
+        # Set some defaults
+        data['created_at'] = data['updated_at'] = datetime.datetime.now()
+        
         # Reduce all links to the basic forms.
         to_store = {'type': entity_type}
         for k, v in data.iteritems():
@@ -215,5 +219,8 @@ class Shotgun(object):
             responses.append(getattr(self, type_)(*args))
         
         return responses
+    
+    def delete(self, entity_type, entity_id):
+        return bool(self._store[entity_type].pop(entity_id, None))
     
     
