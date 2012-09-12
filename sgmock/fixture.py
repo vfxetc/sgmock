@@ -117,7 +117,10 @@ class _Entity(dict):
 
 class _Project(_Entity):
     _argument_defaults = [('name', _required)]
-    _backrefs = {'Sequence': 'project'}
+    _backrefs = {
+        'Sequence': 'project',
+        'Asset': 'project',
+    }
 
 class _Sequence(_Entity):
     _argument_defaults = [('code', _required)]
@@ -135,6 +138,12 @@ class _Task(_Entity):
 
 class _Step(_Entity):
     _argument_defaults = [('short_name', _required)]
+
+class _Asset(_Entity):
+    _argument_defaults = [('code', _required), ('sg_asset_type', 'Generic')]
+    _parent = 'project'
+    _backrefs = {'Task': 'entity'}
+
 
 
 _entity_types = dict(
