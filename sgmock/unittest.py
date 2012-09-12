@@ -28,6 +28,25 @@ class TestCase(BaseTestCase):
             self.fail(msg or '; '.join(errors))
             return
     
+    def assertNotSameEntity(self, a, b, msg=None):
+        errors = []
+        
+        for loc, x in (('1st', a), ('2nd', b)):
+            if not isinstance(x, dict):
+                errors.append('%s is a %r, not dict: %r' % (loc, type(x), x))
+                continue
+            if 'type' not in x:
+                errors.append('%s has no type: %r' % (loc, x))
+            if 'id' not in x:
+                errors.append('%s has no id: %r' % (loc, x))
+        
+        if not errors and a['type'] == b['type'] and a['id'] == b['id']:
+            errors.append('both entities are %s %s' % (a['type'], a['id']))
+        
+        if errors:
+            self.fail(msg or '; '.join(errors))
+            return
+    
     # Add some of the unittest methods that we love from 2.7.
     if sys.version_info < (2, 7):
     

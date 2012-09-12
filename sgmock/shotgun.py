@@ -65,7 +65,8 @@ class Shotgun(object):
                 setattr(self, name, not_implemented)
         
         self._store = collections.defaultdict(dict)
-    
+        self._ids = collections.defaultdict(int)
+        
     def connect(self):
         pass
     
@@ -160,9 +161,10 @@ class Shotgun(object):
         # Set some defaults
         to_store['created_at'] = to_store['updated_at'] = datetime.datetime.now()
         
-        # Store it.
-        to_store['id'] = len(self._store[entity_type]) + 1
-        self._store[entity_type][to_store['id']] = to_store
+        # Get a new ID, and store it.
+        to_store['id'] = id_ = self._ids[entity_type] + 1
+        self._ids[entity_type] = id_
+        self._store[entity_type][id_] = to_store
         
         # Return only the fields we have been asked to return.
         return self._minimal_copy(to_store, itertools.chain(data.iterkeys(), return_fields or ()))
