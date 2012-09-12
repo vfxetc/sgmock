@@ -19,6 +19,8 @@ class Fixture(object):
         return x
         
     def delete_all(self):
+        if not self.created:
+            return
         self.shotgun.batch([dict(
             request_type='delete',
             entity_type=type_,
