@@ -21,4 +21,10 @@ class TestBatch(TestCase):
             self.assertEqual(1, len(found))
             self.assertSameEntity(entity, found[0])
             self.assertIsNot(entity, found[0])
+    
+    def test_batch_empty(self):
+        
+        sg = Shotgun()
+        self.assertRaises(ShotgunError, sg.batch, [])
+    
         

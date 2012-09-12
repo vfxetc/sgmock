@@ -218,6 +218,10 @@ class Shotgun(object):
             
             responses.append(getattr(self, type_)(*args))
         
+        # Error like Shotgun does, but perhaps with a slightly better message.
+        if not responses:
+            raise ShotgunError('batch must have at least one request')
+        
         return responses
     
     def delete(self, entity_type, entity_id):
