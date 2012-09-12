@@ -57,12 +57,12 @@ class Fixture(object):
     def default_steps(self):
         """Return a dict mapping short_names to entities for a default set of steps."""
         steps = {}
-        for name in ('Client', 'Online', 'Roto', 'MM', 'Anm', 'FX',
+        for code in ('Client', 'Online', 'Roto', 'MM', 'Anm', 'FX',
             'Light', 'Comp', 'Art', 'Model', 'Rig', 'Surface'
         ):
-            steps[name] = self.find_or_create('Step', dict(
-                name=name,
-                short_name=name))
+            steps[code] = self.find_or_create('Step', dict(
+                code=code,
+                short_name=code))
         return steps
 
 
@@ -128,7 +128,7 @@ class _Shot(_Entity):
     _backrefs = {'Task': 'entity'}
 
 class _Task(_Entity):
-    _argument_defaults = [('title', _required)]
+    _argument_defaults = [('content', _required)]
     _parent = 'entity'
 
 class _Step(_Entity):
