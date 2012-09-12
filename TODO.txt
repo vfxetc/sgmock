@@ -2,22 +2,8 @@
 
 - Batches in transactions.
 
-- Required fields as a substitute for a full schema.
+- Document that we aren't going to emulate the proper schema by design. This will allow us to better deal with implementation changes on Shotgun's side, and by having our tools work on the mock server will require them to use better practises by defining their own defaults. We should should still have requirements and defaults, but in a manner that is around the normal API.
 
-- Basic schema.
+- requirements and defaults
 
-- Common fixtures:
-    - pipeline steps
-    - projects (random timestamped name)
-    - sequences ('AA', 'BB', 'CC', 'DD')
-    - shots ('AA_001', etc.)
-    - tasks (named after the pipeline steps)
-    - fix.create('Step', *args, **kwargs)
-        - __class__ -> the class to use
-    - fix.default_args = {
-        'Step': [
-            ('short_name', _required)]
-    }
-    - fix.Step('short_name', **kwargs) -> fix.create('Step',
-    - fix.Project(...).Sequence automatically links up
-    - short_name=short_name, **kwargs)
+
