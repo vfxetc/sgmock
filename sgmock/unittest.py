@@ -1,10 +1,15 @@
 from __future__ import absolute_import
 
 from unittest import TestCase as BaseTestCase
+import os
 import sys
 
 
 class TestCase(BaseTestCase):
+    
+    def failIfLocal(self, msg=None):
+        if os.environ.get('TRAVIS', 'false') != 'true':
+            self.fail(msg or 'not Travis CI')
     
     def assertSameEntity(self, a, b, msg=None):
         errors = []
