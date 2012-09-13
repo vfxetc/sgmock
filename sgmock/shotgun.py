@@ -175,7 +175,7 @@ class Shotgun(object):
                 to_store[k] = v
          
         # Set some defaults
-        to_store['created_at'] = to_store['updated_at'] = datetime.datetime.now()
+        to_store['created_at'] = to_store['updated_at'] = datetime.datetime.utcnow()
         
         # Get a new ID, and store it.
         to_store['id'] = id_ = self._ids[entity_type] + 1

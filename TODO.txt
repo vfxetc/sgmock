@@ -6,4 +6,5 @@
 
 - requirements and defaults
 
+- updated_at should have a timezone
 
