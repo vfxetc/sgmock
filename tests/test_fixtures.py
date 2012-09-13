@@ -66,17 +66,28 @@ class TestFixtures(TestCase):
         print step
         task = shot.Task('Animate something', step=step)
         print task
-        
+                
         self.assertEqual(task['type'], 'Task')
         self.assertEqual(shot['type'], 'Shot')
         self.assertEqual(seq['type'], 'Sequence')
+        self.assertEqual(step['type'], 'Step')
         self.assertEqual(proj['type'], 'Project')
         
+        # Parents (except projects below).
         self.assertSameEntity(task['step'], step)
         self.assertSameEntity(task['entity'], shot)
         self.assertSameEntity(shot['sg_sequence'], seq)
+        
+        # Projects for all!
         self.assertSameEntity(seq['project'], proj)
-    
+        self.assertIsNot(seq['project'], proj)
+        self.assertSameEntity(shot['project'], proj)
+        self.assertIsNot(shot['project'], proj)
+        self.assertIsNot(shot['project'], seq['project'])
+        self.assertSameEntity(task['project'], proj)
+        self.assertIsNot(task['project'], proj)
+        self.assertIsNot(task['project'], shot['project'])
+        self.assertIsNot(task['project'], seq['project'])
     
     def test_shot_task_chain_cleanup(self):
         sg = Shotgun()

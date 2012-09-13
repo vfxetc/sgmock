@@ -70,10 +70,10 @@ class Fixture(object):
 
 class _Creator(object):
     
-    def __init__(self, fixture, entity_type, pre_create_callback=None):
+    def __init__(self, fixture, entity_type, parent=None):
         self.fixture = fixture
         self.entity_type = entity_type
-        self.pre_create_callback = pre_create_callback
+        self.parent = parent
         
     def __call__(self, *args, **kwargs):
         constructor = _entity_types.get(self.entity_type, _Entity)
@@ -86,10 +86,8 @@ class _Creator(object):
                 else:
                     kwargs[name] = args[0]
                     args = args[1:]
-        if self.pre_create_callback:
-            self.pre_create_callback(self.entity_type, kwargs)
         raw = self.fixture.create(self.entity_type, kwargs, kwargs.keys())
-        return constructor(self.fixture, raw)
+        return constructor(self.fixture, self.parent, raw)
 
 
 class _Entity(dict):
@@ -98,16 +96,23 @@ class _Entity(dict):
     _parent = None
     _backrefs = {}
     
-    def __init__(self, fixture, *args, **kwargs):
-        super(_Entity, self).__init__(*args, **kwargs)
+    def __init__(self, fixture, parent, data):
+        super(_Entity, self).__init__(data)
         self.fixture = fixture
-    
-    def _pre_create(self, entity_type, data):
-        data[self._backrefs[entity_type]] = self.minimal
+        if parent:
+        
+            # Set any backrefs to our parent.
+            self[parent._backrefs[self['type']]] = parent.minimal
+            
+            # Set the project if it is in our parent.
+            if parent['type'] == 'Project':
+                self['project'] = parent.minimal
+            elif 'project' in parent:
+                self['project'] = parent['project'].copy()
     
     def __getattr__(self, name):
         if name[0].isupper() and name in self._backrefs:
-            return _Creator(self.fixture, name, self._pre_create)
+            return _Creator(self.fixture, name, self)
         raise AttributeError(name)
     
     @property
