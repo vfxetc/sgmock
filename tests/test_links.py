@@ -42,4 +42,39 @@ class TestLinks(TestCase):
         self.assertSameEntity(seq, found_seq)
         self.assertEqual(3, len(found_seq))
         self.assertEqual(name, found_seq['project.Project.name'])
+    
+    def test_missing_deep_links(self):
+        
+        sg = Shotgun()
+        proj = sg.create('Project', dict(name='whatever'))
+        seq = sg.create('Sequence', dict(code='AA', project=proj))
+        shot = sg.create('Shot', dict(code='AA_001', sg_sequence=seq, project=proj))
+        step = sg.create('Step', dict(code="Anim", short_name="Anim"))
+        task = sg.create('Task', dict(entity=shot, step=step, content="Animate Something"))
+        
+        # There are a lot of wierd results with deep links in Shotgun 4.0.0...
+        
+        result = sg.find_one('Task', [], [
+            'entity',
+            'entity.Sequence',
+            'entity.Shot',
+            'entity.Shot.code',
+            'entity.Shot.code.more',
+            'entity.Shot.does_not_exist',
+            'entity.Asset.code',
+            'entity.Asset.code.more',
+            'entity.Asset.sg_asset_type',
+            'entity.Shot.sg_sequence',
+            'entity.Shot.sg_sequence.Sequence.code',
+        ])
+        
+        self.assertSameEntity(result['entity'], shot)
+        for name in 'entity.Sequence', 'entity.Shot', 'entity.Shot.does_not_exist', 'entity.Asset.code', 'entity.Asset.code.more', 'entity.Asset.sg_asset_type':
+            self.assertIn(name, result)
+            self.assertIsNone(result[name])
+        self.assertEqual(result['entity.Shot.code'], shot['code'])
+        self.assertEqual(result['entity.Shot.code.more'], shot['code'])
+        self.assertSameEntity(result['entity.Shot.sg_sequence'], seq)
+        self.assertSameEntity(result['entity.Shot.sg_sequence.Sequence.code'], seq)
+        
         

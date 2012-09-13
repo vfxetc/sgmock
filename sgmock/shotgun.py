@@ -112,10 +112,12 @@ class Shotgun(object):
         except KeyError:
             raise ShotgunError('linked entity does not exist; %r' % link)
     
-    _deep_lookup_re = re.compile(r'^(\w+)\.(\w+)\.([\w.]+)$')
+    # `entity.Shot.code.more` will return same as `entity.Shot.code`.
+    _deep_lookup_re = re.compile(r'^(\w+)\.(\w+)\.([^.]+)')
     
-    def _lookup_field(self, entity, field, default=_no_arg_sentinel):
+    def _lookup_field(self, entity, field):
         
+        # Simple fields.
         try:
             return entity[field]
         except KeyError:
@@ -123,26 +125,40 @@ class Shotgun(object):
         
         m = self._deep_lookup_re.match(field)
         if not m:
+            
+            parts = field.split('.')
+            if any(not x for x in parts):
+                raise ShotgunError('malformed field %r' % field)
+            
+            # Anything that looks kinda like a deep-link returns None.
+            if len(parts) > 1:
+                return None
+                
+            # Single fields are ignored.
             raise KeyError(field)
         
         local_field, link_type, deep_field = m.groups()
-            
         # Get the link.
         try:
             link = entity[local_field]
         except KeyError:
-            if default is _no_arg_sentinel:
-                raise ShotgunError('entity has no field %r; %r' % (local_field, entity))
-            return default
-            
+            # Non existant local parts of a deep link are ignored.
+            raise KeyError(field)
+
+        # Non-entity deep-links are ignored.
         if not isinstance(link, dict):
-            raise ShotgunError('non-entity value for deep linking at %r; %r' % (local_field, entity))
+            raise KeyError(field)
+        
+        # Deep-link type mismatches result in a None
         if not link['type'] == link_type:
-            raise ShotgunError('deep-link type mismatch; %r is not %r' % (link, link_type))
-            
-        # Go to the next step in the link.
+            return None
+        
+        # Resolve the link, but let the error pop through since Shotgun would
+        # never actually get to this state.
         linked = self._resolve_link(link)
-        return self._lookup_field(linked, deep_field, default)
+        
+        # There is only one level of a deep-link, and it always returns None.
+        return linked.get(deep_field)
             
     def create(self, entity_type, data, return_fields=None):
         """Create an entity of the given type and data; return the new entity."""
