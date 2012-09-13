@@ -86,6 +86,9 @@ class _Creator(object):
                 else:
                     kwargs[name] = args[0]
                     args = args[1:]
+        
+        if self.parent:
+            self.parent.prepare_child(self.entity_type, kwargs)
         raw = self.fixture.create(self.entity_type, kwargs, kwargs.keys())
         return constructor(self.fixture, self.parent, raw)
 
@@ -96,19 +99,20 @@ class _Entity(dict):
     _parent = None
     _backrefs = {}
     
+    def prepare_child(self, entity_type, kwargs):
+        
+        # Set backref to us.
+        kwargs[self._backrefs[entity_type]] = self.minimal
+            
+        # Set the project.
+        if self['type'] == 'Project':
+            kwargs['project'] = self.minimal
+        elif 'project' in self:
+            kwargs['project'] = self['project'].copy()
+        
     def __init__(self, fixture, parent, data):
         super(_Entity, self).__init__(data)
         self.fixture = fixture
-        if parent:
-        
-            # Set any backrefs to our parent.
-            self[parent._backrefs[self['type']]] = parent.minimal
-            
-            # Set the project if it is in our parent.
-            if parent['type'] == 'Project':
-                self['project'] = parent.minimal
-            elif 'project' in parent:
-                self['project'] = parent['project'].copy()
     
     def __getattr__(self, name):
         if name[0].isupper() and name in self._backrefs:
