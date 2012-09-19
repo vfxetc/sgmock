@@ -4,7 +4,6 @@ import datetime
 import re
 import itertools
 
-import mock
 import shotgun_api3
 
 
@@ -54,8 +53,8 @@ class Shotgun(object):
         
         # Fake some attributes; effectively eat all the args.
         self.base_url = base_url or 'https://github.com/westernx/sgmock'
-        self.client_caps = mock.Mock(shotgun_api3.shotgun.ServerCapabilities, side_effect=NotImplementedError)
-        self.config = mock.Mock(shotgun_api3.shotgun._Config, side_effect=NotImplementedError)
+        self.client_caps = None
+        self.config = None
         
         # Set everything else to be not implemented.
         def not_implemented(*args, **kwargs):
@@ -72,9 +71,6 @@ class Shotgun(object):
     
     def close(self):
         pass
-
-    def info(self):
-        return {'version': [4, 0, 0]}
     
     def _entity_exists(self, entity):
         """Return True if the referenced entity does exist in our store."""
