@@ -4,5 +4,5 @@
 ==================
 
 .. automodule:: sgmock.fixture
-    
+    :members:
     
