@@ -15,3 +15,5 @@ Also, the mockup starts with absolutely no entities. That includes things that y
 If you ask the mockup to do something that it doesn't understand then we try to fail quickly and fail really hard. Usually with a `ShotgunError` or `NotImplementedError`.
 
 Good luck, and happy testing!
+
+[Read the Docs](http://sgmock.readthedocs.org/)

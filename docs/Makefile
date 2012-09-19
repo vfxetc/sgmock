@@ -1,5 +1,4 @@
 # Makefile for Sphinx documentation
-#
 
 # You can set these variables from the command line.
 SPHINXOPTS    =
@@ -14,7 +13,9 @@ ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 # the i18n builder cannot share the environment and doctrees with the others
 I18NSPHINXOPTS  = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 
-.PHONY: help clean html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest gettext
+.PHONY: default help clean html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest gettext
+
+default: html
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
@@ -41,7 +42,10 @@ help:
 clean:
 	-rm -rf $(BUILDDIR)/*
 
-html:
+clean-nfs:
+	@find . -name '._*' -exec rm {} \;
+
+html: clean-nfs
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
@@ -77,17 +81,17 @@ qthelp:
 	@echo
 	@echo "Build finished; now you can run "qcollectiongenerator" with the" \
 	      ".qhcp project file in $(BUILDDIR)/qthelp, like this:"
-	@echo "# qcollectiongenerator $(BUILDDIR)/qthelp/sgmock.qhcp"
+	@echo "# qcollectiongenerator $(BUILDDIR)/qthelp/WesternPost.qhcp"
 	@echo "To view the help file:"
-	@echo "# assistant -collectionFile $(BUILDDIR)/qthelp/sgmock.qhc"
+	@echo "# assistant -collectionFile $(BUILDDIR)/qthelp/WesternPost.qhc"
 
 devhelp:
 	$(SPHINXBUILD) -b devhelp $(ALLSPHINXOPTS) $(BUILDDIR)/devhelp
 	@echo
 	@echo "Build finished."
 	@echo "To view the help file:"
-	@echo "# mkdir -p $$HOME/.local/share/devhelp/sgmock"
-	@echo "# ln -s $(BUILDDIR)/devhelp $$HOME/.local/share/devhelp/sgmock"
+	@echo "# mkdir -p $$HOME/.local/share/devhelp/WesternPost"
+	@echo "# ln -s $(BUILDDIR)/devhelp $$HOME/.local/share/devhelp/WesternPost"
 	@echo "# devhelp"
 
 epub:

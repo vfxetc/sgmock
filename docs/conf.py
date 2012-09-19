@@ -11,7 +11,12 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys, os
+import datetime
+import os
+import sys
+
+# Detect if we are on Read the Docs
+read_the_docs = os.environ.get('READTHEDOCS', None) == 'True'
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -25,7 +30,13 @@ import sys, os
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.todo', 'sphinx.ext.viewcode']
+extensions = [
+    'sphinx.ext.autodoc', 
+    'sphinx.ext.intersphinx',
+    'sphinx.ext.todo',
+    'sphinx.ext.viewcode',
+    'sphinx.ext.extlinks',
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -41,7 +52,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'sgmock'
-copyright = u'2012, Mike Boers'
+copyright = u'%s, Western X' % datetime.datetime.utcnow().year
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -89,17 +100,16 @@ pygments_style = 'sphinx'
 
 # -- Options for HTML output ---------------------------------------------------
 
-# The theme to use for HTML and HTML Help pages.  See the documentation for
-# a list of builtin themes.
-html_theme = 'default'
-
-# Theme options are theme-specific and customize the look and feel of a theme
-# further.  For a list of options available for each theme, see the
-# documentation.
-#html_theme_options = {}
-
-# Add any paths that contain custom themes here, relative to this directory.
-#html_theme_path = []
+flask_path = os.path.abspath('../../docs/_themes/flask')
+if os.path.exists(flask_path):
+    sys.path.append(flask_path)
+    html_theme_path = [flask_path]
+    html_theme = 'flask'
+    html_theme_options = {
+        'index_logo': None,
+    }
+else:
+    html_theme = 'default'
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
@@ -110,7 +120,7 @@ html_theme = 'default'
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
-#html_logo = None
+html_logo = '_static/westernx_small_logo.png'
 
 # The name of an image file (within the static path) to use as favicon of the
 # docs.  This file should be a Windows icon file (.ico) being 16x16 or 32x32
@@ -184,7 +194,7 @@ latex_elements = {
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
   ('index', 'sgmock.tex', u'sgmock Documentation',
-   u'Mike Boers', 'manual'),
+   u'Western X', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -214,7 +224,7 @@ latex_documents = [
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('index', 'sgmock', u'sgmock Documentation',
-     [u'Mike Boers'], 1)
+     [u'Western X'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -228,7 +238,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
   ('index', 'sgmock', u'sgmock Documentation',
-   u'Mike Boers', 'sgmock', 'One line description of project.',
+   u'Western X', 'sgmock', 'One line description of project.',
    'Miscellaneous'),
 ]
 
@@ -240,3 +250,9 @@ texinfo_documents = [
 
 # How to display URL addresses: 'footnote', 'no', or 'inline'.
 #texinfo_show_urls = 'footnote'
+
+todo_include_todos = True
+
+intersphinx_mapping = {
+    'python': ('http://docs.python.org/release/2.6.8/', None),
+}
