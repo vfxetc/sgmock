@@ -1,3 +1,5 @@
+"""Mock replacement for ``shotgun_api3`` module."""
+
 import collections
 import copy
 import datetime
@@ -8,9 +10,11 @@ import shotgun_api3
 
 
 class ShotgunError(Exception):
+    """Exception for all server logic."""
     pass
 
 class Fault(ShotgunError):
+    """Exception for all remote API logic; unused in this mock."""
     pass
 
 
@@ -49,6 +53,12 @@ _filters = {
 
 class Shotgun(object):
     
+    """A mock Shotgun server, replicating the ``shotgun_api3`` interface.
+    
+    The constructor is a dummy and eats all arguments.
+    
+    """
+    
     def __init__(self, base_url=None, *args, **kwargs):
         
         # Fake some attributes; effectively eat all the args.
@@ -67,9 +77,11 @@ class Shotgun(object):
         self._ids = collections.defaultdict(int)
         
     def connect(self):
+        """Stub; does nothing."""
         pass
     
     def close(self):
+        """Stub; does nothing."""
         pass
     
     def _entity_exists(self, entity):
@@ -157,7 +169,15 @@ class Shotgun(object):
         return linked.get(deep_field)
             
     def create(self, entity_type, data, return_fields=None):
-        """Create an entity of the given type and data; return the new entity."""
+        """Store an entity of the given type and data; return the new entity.
+        
+        :param str entity_type: The type of the entity.
+        :param dict data: The fields for the new entity.
+        :param list return_fields: Which fields to return from the server in
+            addition to those explicitly stored; only good for ``updated_at``
+            in this mock version.
+        
+        """
         
         # Reduce all links to the basic forms.
         to_store = {'type': entity_type}
@@ -183,7 +203,14 @@ class Shotgun(object):
     
     def find_one(self, entity_type, filters, fields=None, order=None, 
         filter_operator=None, retired_only=False):
-
+        """Find and return a single entity.
+        
+        This is the same as calling :meth:`find` and only returning the first
+        result.
+        
+        :return: ``dict`` or ``None``.
+        
+        """
         results = self.find(entity_type, filters, fields, order, 
             filter_operator, 1, retired_only)
         if results:
@@ -192,7 +219,23 @@ class Shotgun(object):
     
     def find(self, entity_type, filters, fields=None, order=None, 
         filter_operator=None, limit=0, retired_only=False, page=0):
+        """Find and return entities satifying a list of filters.
         
+        We currently support deep-linked fields in the return fields, but not
+        in filters.
+        
+        :param str entity_type: The type of entities to find.
+        :param list filters: A list of `filters <https://github.com/shotgunsoftware/python-api/wiki/Reference%3A-Filter-Syntax>`_
+        :param list fields: Which fields to return.
+        :param order: Ignored.
+        :param filter_operator: Ignored.
+        :param limite: Ignored.
+        :param retired_only: Ignored.
+        :param page: Ignored.
+        
+        :return: ``list`` of ``dict``s.
+        
+        """
         # Wrap the base entities with all of the filters.
         entities = self._store[entity_type].itervalues()
         for filter_ in filters:
@@ -211,6 +254,16 @@ class Shotgun(object):
     }
     
     def batch(self, requests):
+        """Perform a series of requests in one request.
+        
+        This mock does not have transactions, so a failed request will leave
+        the data store in a partially mutated state.
+        
+        :param list requests: A series of ``dicts`` representing requests.
+        :return: ``list`` of results from calling methods individually.
+        
+        """
+        
         responses = []
         
         for request in requests:
@@ -239,6 +292,16 @@ class Shotgun(object):
         return responses
     
     def delete(self, entity_type, entity_id):
+        """Delete a single entity.
+        
+        This mock does not have retired entities, so once it is deleted an
+        entity is gone.
+        
+        :param str entity_type: The type of the entity to delete.
+        :param int entity_id: The id of the entity to delete.
+        :return bool: ``True`` if the entity did exist.
+        
+        """
         return bool(self._store[entity_type].pop(entity_id, None))
     
     

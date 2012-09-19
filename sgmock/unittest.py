@@ -7,11 +7,21 @@ import sys
 
 class TestCase(BaseTestCase):
     
+    """Extensions to :class:`python:unittest.TestCase` which understand entities,
+    and backport many methods from Python2.7.
+    
+    """
+    
     def failIfLocal(self, msg=None):
         if os.environ.get('TRAVIS', 'false') != 'true':
             self.fail(msg or 'not Travis CI')
     
     def assertSameEntity(self, a, b, msg=None):
+        """Assert that the two given entities refer to the same object.
+        
+        E.g.: Both are dicts and their types and ids match.
+        
+        """
         errors = []
         
         for loc, x in (('1st', a), ('2nd', b)):
@@ -34,6 +44,11 @@ class TestCase(BaseTestCase):
             return
     
     def assertNotSameEntity(self, a, b, msg=None):
+        """Assert that the two given entities do not refer to the same object.
+        
+        E.g.: Both are dicts and their types and ids do not match.
+        
+        """
         errors = []
         
         for loc, x in (('1st', a), ('2nd', b)):

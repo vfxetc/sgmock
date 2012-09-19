@@ -3,8 +3,56 @@ _required = object()
 
 class Fixture(object):
     
+    """Assistant for creating test fixtures.
+    
+    This proxies all undefined attributes to its :class:`~sgmock.shotgun.Shotgun`
+    instance for easy tear-down of newly created entities. E.g::
+    
+        # Create a fixture wrapping a mock Shotgun.
+        sg = Fixture(Shotgun())
+        sg.create('Project', {'name': 'My Testing Project'})
+        
+        # Test some things.
+        
+        # Clean up everything we made.
+        sg.delete_all()
+    
+    This also provides convenience methods to directly create entities with
+    keyword arguments, and to create common entities with links
+    to their parents/owners. e.g.::
+
+        sg = Fixture(Shotgun())
+        
+        # Create a pipeline step.
+        anim = sg.Step(code='Animation')
+        
+        # Create a project with a `name`.
+        proj = sg.Project('My Testing Project')
+        
+        # Create a sequence with a `code`.
+        seq = proj.Sequence('First Sequence')
+        
+        # Create a shot with a `code`.
+        shot = seq.Shot('FS_001')
+    
+    The current understood heirarchy is::
+    
+        - Project
+            - Asset
+                - Task
+            - Sequence
+                - Shot
+                    - Task
+    
+    """
+    
     def __init__(self, shotgun):
+        
+        #: The :class:`~sgmock.shotgun.Shotgun` we will proxy and use for
+        #: creation.
         self.shotgun = shotgun
+        
+        #: The ``list`` of created entities.
         self.created = []
     
     def __getattr__(self, name):
@@ -14,11 +62,13 @@ class Fixture(object):
             return getattr(self.shotgun, name)
             
     def create(self, *args, **kwargs):
+        """Create an entity; proxies :meth:`~sgmock.shotgun.Shotgun.create`."""
         x = self.shotgun.create(*args, **kwargs)
         self.created.append((x['type'], x['id']))
         return x
         
     def delete_all(self):
+        """Delete all entities that this fixture created or proxied the creation of."""
         if not self.created:
             return
         self.shotgun.batch([dict(
@@ -52,7 +102,13 @@ class Fixture(object):
         return self.create(entity_type, data, data.keys())
     
     def default_steps(self):
-        """Return a dict mapping short_names to entities for a default set of steps."""
+        """Return a dict mapping short_names to entities for a default set of steps.
+        
+        These steps are created if they don't exist, and include: ``Client``,
+        ``Online``, ``Roto``, ``MM``, ``Anm``, ``FX``, ``Light``, ``Comp``,
+        ``Art``, ``Model``, ``Rig``, and ``Surface``.
+        
+        """
         steps = {}
         for code in ('Client', 'Online', 'Roto', 'MM', 'Anm', 'FX',
             'Light', 'Comp', 'Art', 'Model', 'Rig', 'Surface'
