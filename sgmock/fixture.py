@@ -28,33 +28,28 @@ class Fixture(object):
         ) for type_, id_ in reversed(self.created)])
         self.created = []
         
-    def find_or_create(self, entity_type, datum=None, **kwargs):
+    def find_or_create(self, entity_type, data=None, **kwargs):
+        """Find an entity matching all of the given fields, or create it.
         
-        if datum and kwargs:
-            raise ValueError('specify datum or kwargs')
-        if kwargs:
-            datum = [kwargs]
-            is_single = True
-        elif isinstance(datum, dict):
-            datum = [datum]
-            is_single = True
-        else:
-            is_single = False
+        :param str entity_type: The type of entity to find or create.
+        :param dict data: The fields to look for or create.
+        :return dict: The found or created entity.
         
-        result = []
-        for data in datum:
-            filters = []
-            for k, v in data.iteritems():
-                filters.append((k, 'is', v))
-            entity = self.shotgun.find_one(entity_type, filters, data.keys())
-            if entity:
-                result.append(entity)
-                continue
-            data = data.copy()
-            data.pop('id', None)
-            result.append(self.create(entity_type, data, data.keys()))
+        """
         
-        return result[0] if is_single else result
+        if data and kwargs:
+            raise ValueError('specify data or kwargs')
+        data = data or kwargs
+        
+        filters = []
+        for k, v in data.iteritems():
+            filters.append((k, 'is', v))
+        entity = self.shotgun.find_one(entity_type, filters, data.keys())
+        if entity:
+            return entity
+        data = data.copy()
+        data.pop('id', None)
+        return self.create(entity_type, data, data.keys())
     
     def default_steps(self):
         """Return a dict mapping short_names to entities for a default set of steps."""
