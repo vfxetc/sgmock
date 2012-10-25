@@ -111,6 +111,14 @@ class Shotgun(object):
                 continue
             if isinstance(v, dict):
                 minimal[field] = self._minimal_copy(self._resolve_link(v), ['name'])
+            elif isinstance(v, list):
+                res = []
+                for x in v:
+                    if isinstance(x, dict):
+                        res.append(self._minimal_copy(x))
+                    else:
+                        res.append(x)
+                minimal[field] = res
             else:
                 minimal[field] = v
         return minimal
@@ -174,35 +182,45 @@ class Shotgun(object):
         
         # There is only one level of a deep-link, and it always returns None.
         return linked.get(deep_field)
-        
+    
+    def _reduce_links(self, data):
+        if isinstance(data, dict):
+            if 'type' in data and 'id' in data:
+                if not self._entity_exists(data):
+                    raise ShotgunError('linked entity %r does not exist' % self._minimal(data))
+                return self._minimal_copy(data)
+            res = {}
+            for k, v in data.iteritems():
+                res[k] = self._reduce_links(v)
+            return res
+        if isinstance(data, (list, tuple)):
+            return list(self._reduce_links(x) for x in data)
+        return data
+    
     def _create_or_update(self, entity_type, entity_id, data, return_fields=None):
         
-        # Reduce all links to the basic forms.
+        # Get or create the entity.
         if entity_id is None:
-            to_store = {
+            entity = {
                 'type': entity_type,
                 'id': self._ids[entity_type] + 1,
                 'created_at': datetime.datetime.utcnow(),
             }
-            self._ids[entity_type] = to_store['id']
-            self._store[entity_type][to_store['id']] = to_store
+            self._ids[entity_type] = entity['id']
+            self._store[entity_type][entity['id']] = entity
         else:
-            to_store = self._store[entity_type][entity_id]
+            # TODO: Handle this gracefully.
+            entity = self._store[entity_type][entity_id]
          
-        # Set some defaults
-        to_store['updated_at'] = datetime.datetime.utcnow()
+        # Set some defaults.
+        entity['updated_at'] = datetime.datetime.utcnow()
         
-        # Store the new data.
-        for k, v in data.iteritems():
-            if isinstance(v, dict):
-                # Make sure the link exists.
-                if not self._entity_exists(v):
-                    raise ShotgunError('linked entity %r does not exist' % self._minimal(v))
-                to_store[k] = self._minimal_copy(v)
-            else:
-                to_store[k] = v
+        # Reduce all links to the basic forms.
+        data = dict(data)
+        data.pop('id', None)
+        entity.update(self._reduce_links(data))
         
-        return to_store
+        return entity
     
     def create(self, entity_type, data, return_fields=None):
         """Store an entity of the given type and data; return the new entity.

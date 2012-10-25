@@ -1,7 +1,7 @@
 from common import *
 
 
-class TestDelete(TestCase):
+class TestUpdate(TestCase):
     
     def test_basic_update(self):
         
