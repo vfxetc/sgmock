@@ -1,7 +1,7 @@
 from pprint import pprint, pformat
 import os
 
-import shotgun_api3
+# import shotgun_api3
 
 from sgmock import Shotgun, ShotgunError, Fault
 from sgmock import Fixture

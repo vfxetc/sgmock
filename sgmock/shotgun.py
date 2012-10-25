@@ -63,6 +63,7 @@ class Shotgun(object):
         
         # Fake some attributes; effectively eat all the args.
         self.base_url = base_url or 'https://github.com/westernx/sgmock'
+        self.server_url = self.base_url
         self.client_caps = None
         self.config = None
         
@@ -75,6 +76,7 @@ class Shotgun(object):
         
         self._store = collections.defaultdict(dict)
         self._ids = collections.defaultdict(int)
+        self._deleted = collections.defaultdict(dict)
         
     def connect(self):
         """Stub; does nothing."""
@@ -83,6 +85,11 @@ class Shotgun(object):
     def close(self):
         """Stub; does nothing."""
         pass
+    
+    def info(self):
+        return {
+            'version': '4.0.0',
+        }
     
     def _entity_exists(self, entity):
         """Return True if the referenced entity does exist in our store."""
@@ -167,7 +174,36 @@ class Shotgun(object):
         
         # There is only one level of a deep-link, and it always returns None.
         return linked.get(deep_field)
-            
+        
+    def _create_or_update(self, entity_type, entity_id, data, return_fields=None):
+        
+        # Reduce all links to the basic forms.
+        if entity_id is None:
+            to_store = {
+                'type': entity_type,
+                'id': self._ids[entity_type] + 1,
+                'created_at': datetime.datetime.utcnow(),
+            }
+            self._ids[entity_type] = to_store['id']
+            self._store[entity_type][to_store['id']] = to_store
+        else:
+            to_store = self._store[entity_type][entity_id]
+         
+        # Set some defaults
+        to_store['updated_at'] = datetime.datetime.utcnow()
+        
+        # Store the new data.
+        for k, v in data.iteritems():
+            if isinstance(v, dict):
+                # Make sure the link exists.
+                if not self._entity_exists(v):
+                    raise ShotgunError('linked entity %r does not exist' % self._minimal(v))
+                to_store[k] = self._minimal_copy(v)
+            else:
+                to_store[k] = v
+        
+        return to_store
+    
     def create(self, entity_type, data, return_fields=None):
         """Store an entity of the given type and data; return the new entity.
         
@@ -178,28 +214,11 @@ class Shotgun(object):
             in this mock version.
         
         """
+        entity = self._create_or_update(entity_type, None, data)
+        return self._minimal_copy(entity, itertools.chain(data.iterkeys(), return_fields or ()))
         
-        # Reduce all links to the basic forms.
-        to_store = {'type': entity_type}
-        for k, v in data.iteritems():
-            if isinstance(v, dict):
-                # Make sure the link exists.
-                if not self._entity_exists(v):
-                    raise ShotgunError('linked entity %r does not exist' % self._minimal(v))
-                to_store[k] = self._minimal_copy(v)
-            else:
-                to_store[k] = v
-         
-        # Set some defaults
-        to_store['created_at'] = to_store['updated_at'] = datetime.datetime.utcnow()
-        
-        # Get a new ID, and store it.
-        to_store['id'] = id_ = self._ids[entity_type] + 1
-        self._ids[entity_type] = id_
-        self._store[entity_type][id_] = to_store
-        
-        # Return only the fields we have been asked to return.
-        return self._minimal_copy(to_store, itertools.chain(data.iterkeys(), return_fields or ()))
+    def update(self, entity_type, entity_id, data):
+        return self._create_or_update(entity_type, entity_id, data)
     
     def find_one(self, entity_type, filters, fields=None, order=None, 
         filter_operator=None, retired_only=False):
@@ -302,6 +321,16 @@ class Shotgun(object):
         :return bool: ``True`` if the entity did exist.
         
         """
-        return bool(self._store[entity_type].pop(entity_id, None))
+        entity = self._store[entity_type].pop(entity_id, None)
+        if entity:
+            self._deleted[entity_type][entity_id] = entity
+        return bool(entity)
+    
+    def revive(self, entity_type, entity_id):
+        entity = self._deleted[entity_type].pop(entity_id, None)
+        if entity:
+            self._store[entity_type][entity_id] = entity
+        return bool(entity)
+        
     
     
