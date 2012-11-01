@@ -43,11 +43,23 @@ class _InFilter(object):
         for entity in entity_iter:
             if entity.get(self.field) in self.values:
                 yield entity
+                
+class _LessThanFilter(object):
+    
+    def __init__(self, field, value):
+        self.field = field
+        self.value = value
+    
+    def __call__(self, entity_iter):
+        for entity in entity_iter:
+            if entity.get(self.field) < self.value:
+                yield entity
 
 
 _filters = {
     'is': _IsFilter,
     'in': _InFilter,
+    'less_than': _LessThanFilter,
 }
 
 
