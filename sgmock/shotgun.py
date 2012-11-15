@@ -248,8 +248,13 @@ class Shotgun(object):
         return self._minimal_copy(entity, itertools.chain(data.iterkeys(), return_fields or ()))
         
     def update(self, entity_type, entity_id, data):
-        return self._create_or_update(entity_type, entity_id, data)
-    
+        
+        # Perform the update.
+        entity = self._create_or_update(entity_type, entity_id, data)
+        
+        # Return a copy with only the updated data in it.
+        return dict((k, entity[k]) for k in set(itertools.chain(data, ('type', 'id'))))
+        
     def find_one(self, entity_type, filters, fields=None, order=None, 
         filter_operator=None, retired_only=False):
         """Find and return a single entity.
