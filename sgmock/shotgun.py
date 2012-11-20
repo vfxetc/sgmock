@@ -29,7 +29,12 @@ class _IsFilter(object):
     
     def __call__(self, entity_iter):
         for entity in entity_iter:
-            if entity.get(self.field) == self.value:
+            if isinstance(self.value, dict):
+                if (self.value.get('type') == entity.get(self.field, {}).get('type') and
+                    self.value.get('id') == entity.get(self.field, {}).get('id')
+                ):
+                    yield entity
+            elif entity.get(self.field) == self.value:
                 yield entity
 
 
@@ -63,6 +68,9 @@ _filters = {
 }
 
 
+class _Config(object):
+    pass
+
 class Shotgun(object):
     
     """A mock Shotgun server, replicating the ``shotgun_api3`` interface.
@@ -77,7 +85,7 @@ class Shotgun(object):
         self.base_url = base_url or 'https://github.com/westernx/sgmock'
         self.server_url = self.base_url
         self.client_caps = None
-        self.config = None
+        self.config = _Config()
         
         # Set everything else to be not implemented.
         def not_implemented(*args, **kwargs):
@@ -298,8 +306,11 @@ class Shotgun(object):
                 raise ShotgunError('unknown filter %r' % filter_type)
             entities = _filters[filter_type](filter_[0], *filter_[2:])(entities)
         
+        
         # Return minimal copies.
-        return [self._minimal_copy(entity, fields) for entity in entities]
+        res = [self._minimal_copy(entity, fields) for entity in entities]
+        print '# sgmock.Shotgun.find(%r, %r) -> [%s]' % (entity_type, filters, ', '.join(str(e['id']) for e in res))
+        return res
         
     _batch_type_args = {
         'create': ('entity_type', 'data'),
