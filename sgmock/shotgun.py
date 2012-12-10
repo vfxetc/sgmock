@@ -20,8 +20,7 @@ class Fault(ShotgunError):
 
 _no_arg_sentinel = object()
 
-
-class _IsFilter(object):
+class _ScalarFilter(object):
     
     def __init__(self, field, value):
         self.field = field
@@ -29,13 +28,23 @@ class _IsFilter(object):
     
     def __call__(self, entity_iter):
         for entity in entity_iter:
-            if isinstance(self.value, dict):
-                if (self.value.get('type') == entity.get(self.field, {}).get('type') and
-                    self.value.get('id') == entity.get(self.field, {}).get('id')
-                ):
-                    yield entity
-            elif entity.get(self.field) == self.value:
+            if self.test(self.value, entity.get(self.field)):
                 yield entity
+
+    def test(self, value, field):
+        raise NotImplementedError()
+
+
+class _IsFilter(_ScalarFilter):
+    
+    def test(self, value, field):
+        if isinstance(value, dict):
+            return (
+                value.get('type') == (field or {}).get('type') and
+                value.get('id') == (field or {}).get('id')
+            )
+        else:
+            return value == field
 
 
 class _InFilter(object):
@@ -49,22 +58,22 @@ class _InFilter(object):
             if entity.get(self.field) in self.values:
                 yield entity
                 
-class _LessThanFilter(object):
+class _LessThanFilter(_ScalarFilter):
     
-    def __init__(self, field, value):
-        self.field = field
-        self.value = value
-    
-    def __call__(self, entity_iter):
-        for entity in entity_iter:
-            if entity.get(self.field) < self.value:
-                yield entity
+    def test(self, value, field):
+        return field < value
+
+class _StartsWithFilter(_ScalarFilter):
+
+    def test(self, value, field):
+        return field.startswith(value)
 
 
 _filters = {
     'is': _IsFilter,
     'in': _InFilter,
     'less_than': _LessThanFilter,
+    'starts_with': _StartsWithFilter,
 }
 
 
