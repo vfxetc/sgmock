@@ -110,12 +110,25 @@ class Fixture(object):
         
         """
         steps = {}
-        for code in ('Client', 'Online', 'Roto', 'MM', 'Anm', 'FX',
-            'Light', 'Comp', 'Art', 'Model', 'Rig', 'Surface'
+        for code, color in (
+            ('Client', '255,255,255'),
+            ('Online', '254,92,255'),
+            ('Roto',   '253,254,152'),
+            ('MM',     '254,151,152'),
+            ('Anm',    '254,173,146'),
+            ('FX',     '255,218,137'),
+            ('Light',  '254,205,138'),
+            ('Comp',   '161,236,154'),
+            ('Art',    '0,230,254'),
+            ('Model',  '254,205,138'),
+            ('Rig',    '253,254,152'),
+            ('Surface', '231,251,154'),
         ):
             steps[code] = self.find_or_create('Step', dict(
                 code=code,
-                short_name=code))
+                short_name=code,
+                color=color,
+            ))
         return steps
 
 
@@ -193,7 +206,7 @@ class _Shot(_Entity):
     _backrefs = {'Task': 'entity'}
 
 class _Task(_Entity):
-    _argument_defaults = [('content', _required)]
+    _argument_defaults = [('content', _required), ('step', _required)]
     _parent = 'entity'
 
 class _Step(_Entity):
