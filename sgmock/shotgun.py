@@ -1,7 +1,6 @@
 """Mock replacement for ``shotgun_api3`` module."""
 
 import collections
-import copy
 import datetime
 import re
 import itertools

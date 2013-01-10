@@ -56,7 +56,7 @@ def full(sg):
             for shot_i in xrange(random.randint(3, 8)):
                 shot = seq.Shot('%s_%03d' % (seq['code'], shot_i + 1))
                 for step_code in ('Online', 'MM', 'Anm', 'Light', 'Comp'):
-                    task = shot.Task('Do %s Work' % step_code, steps[step_code])
+                    shot.Task('Do %s Work' % step_code, steps[step_code])
 
         random.shuffle(asset_specs)
         for asset_i in xrange(random.randint(5, 9)):
@@ -64,7 +64,7 @@ def full(sg):
             asset = proj.Asset(code, type_)
             
             for step_code in ('Art', 'Model', 'Rig'):
-                task = asset.Task('Do %s Work' % step_code, steps[step_code])
+                asset.Task('Do %s Work' % step_code, steps[step_code])
             
     
     
