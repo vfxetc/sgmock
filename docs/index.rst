@@ -3,6 +3,10 @@
 sgmock
 ======
 
+.. image:: https://secure.travis-ci.org/westernx/sgmock.png
+    :alt: Test Status
+    :target: http://travis-ci.org/westernx/sgmock
+
 This Python package is a mock `Shotgun <http://www.shotgunsoftware.com>`_ server for use in unit testing, and a series of tools for building test fixtures. It emulates the experience of using `shotgun_api3 <https://github.com/shotgunsoftware/python-api>`_ with a Shotgun server near version 4.0. It is fairly incomplete, but is enough for testing the majority of our own tools which tend to focus heavily on consuming data from Shotgun instead of manipulating it.
 
 This mockup does not perfectly emulate the Shotgun experience. In general, it makes the assumption that your usage of the Shotgun API is correct, and that you are testing your manipulation of the data that comes out of it. For example:
