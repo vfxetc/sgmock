@@ -1,4 +1,4 @@
-from distutils.core import setup
+from setuptools import setup, find_packages
 
 setup(
     name='sgmock',
@@ -6,7 +6,7 @@ setup(
     description='Mock Shotgun server for unit testing.',
     url='http://github.com/westernx/sgmock',
     
-    packages=['sgmock'],
+    packages=find_packages(exclude=['build*', 'tests*']),
     
     author='Mike Boers',
     author_email='sgmock@mikeboers.com',
