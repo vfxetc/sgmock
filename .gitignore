@@ -2,4 +2,11 @@
 .DS_Store
 *.pyc
 
+# Build products.
 /docs/_build
+/build
+/*.egg-info
+/dist
+
+# Test products.
+/.coverage
