@@ -1,6 +1,17 @@
-from .exceptions import Fault
+from datetime import datetime
+
+from .exceptions import Fault, MockError
 
 _filters = {}
+
+
+def match_types(a, b):
+    if isinstance(a, datetime) and isinstance(b, basestring):
+        return (a.strftime('%Y-%m-%dT%H:%M:%SZ'), b)
+    if isinstance(a, basestring) and isinstance(b, datetime):
+        return (a, b.strftime('%Y-%m-%dT%H:%M:%SZ'))
+    else:
+        return a, b
 
 
 def And(filters):
@@ -47,7 +58,7 @@ def _compile_condition(condition):
 
     op_cls = _filters.get(op_name)
     if not op_cls:
-        raise Fault('unknown filter relation %r' % op_name)
+        raise MockError('unknown filter relation %r' % op_name)
     return op_cls(field, *values)
 
 
@@ -82,7 +93,8 @@ class ScalarFilter(object):
         self.value = value
 
     def __call__(self, entity):
-        return self.test(self.value, entity.get(self.field))
+        value, other = match_types(self.value, entity.get(self.field))
+        return self.test(value, other)
 
     def test(self, value, field):
         raise NotImplementedError()
@@ -116,9 +128,13 @@ class InFilter(object):
 
 @register('less_than')
 class LessThanFilter(ScalarFilter):
-
     def test(self, value, field):
         return field < value
+
+@register('greater_than')
+class LessThanFilter(ScalarFilter):
+    def test(self, value, field):
+        return field > value
 
 
 @register('starts_with')

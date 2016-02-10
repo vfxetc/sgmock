@@ -1,7 +1,9 @@
 
+
 class ShotgunError(Exception):
     """Exception for all server logic."""
     pass
+
 
 class Fault(ShotgunError):
     """Exception for all remote API logic; unused in this mock."""
@@ -14,3 +16,8 @@ class Fault(ShotgunError):
             return self.args[1]
         except IndexError:
             return self._default_code
+
+
+class MockError(Fault):
+    """It is actually an error on our part."""
+    pass

@@ -10,6 +10,8 @@ import shotgun_api3
 
 from .exceptions import ShotgunError, Fault
 from .filters import filter_entities
+from . import events
+from .utils import is_entity, minimize
 
 _no_arg_sentinel = object()
 
@@ -47,6 +49,9 @@ class Shotgun(object):
         self._ids = collections.defaultdict(int)
         self._deleted = collections.defaultdict(dict)
 
+        #self._creator = None
+        #self._creator = self.create('HumanUser', {'name': 'TheCreator'})
+
     def connect(self):
         """Stub; does nothing."""
         pass
@@ -57,7 +62,11 @@ class Shotgun(object):
 
     def info(self):
         return {
-            'version': '4.0.0',
+            's3_uploads_enabled': False,
+            'version': [6, 0, 0],
+            'sgmock': {
+                'version': [0, 1, 0],
+            }
         }
 
     def _entity_exists(self, entity):
@@ -69,21 +78,18 @@ class Shotgun(object):
 
     def _minimal_copy(self, entity, fields=None):
         """Get a minimal representation of the given entity; only type and id."""
-        try:
-            minimal = dict(type=str(entity['type']), id=int(entity['id']))
-        except KeyError:
-            raise ShotgunError('entity does not have type and id; %r' % entity)
+        minimal = minimize(entity)
         for field in fields or ():
             try:
                 v = self._lookup_field(entity, field)
             except KeyError:
                 continue
-            if isinstance(v, dict):
+            if is_entity(v):
                 minimal[field] = self._minimal_copy(self._resolve_link(v), ['name'])
             elif isinstance(v, list):
                 res = []
                 for x in v:
-                    if isinstance(x, dict):
+                    if is_entity(x):
                         res.append(self._minimal_copy(x))
                     else:
                         res.append(x)
@@ -174,6 +180,7 @@ class Shotgun(object):
                 'type': entity_type,
                 'id': self._ids[entity_type] + 1,
                 'created_at': datetime.datetime.utcnow(),
+                #'created_by': self._creator,
             }
             self._ids[entity_type] = entity['id']
             self._store[entity_type][entity['id']] = entity
@@ -183,6 +190,7 @@ class Shotgun(object):
 
         # Set some defaults.
         entity['updated_at'] = datetime.datetime.utcnow()
+        #entity['updated_by'] = self._creator
 
         # Reduce all links to the basic forms.
         data = dict(data)
@@ -191,7 +199,7 @@ class Shotgun(object):
 
         return entity
 
-    def create(self, entity_type, data, return_fields=None):
+    def create(self, entity_type, data, return_fields=None, _log=True, _generate_events=True):
         """Store an entity of the given type and data; return the new entity.
 
         :param str entity_type: The type of the entity.
@@ -202,15 +210,24 @@ class Shotgun(object):
 
         """
         entity = self._create_or_update(entity_type, None, data)
-        log.info('create(%r, %r) -> %d' % (entity_type, data, entity['id']))
+        if _log:
+            log.info('create(%r, %r) -> %d' % (entity_type, data, entity['id']))
+        if _generate_events:
+            events.generate_for_create(self, entity)
         return self._minimal_copy(entity, itertools.chain(data.iterkeys(), return_fields or ()))
 
-    def update(self, entity_type, entity_id, data):
+    def update(self, entity_type, entity_id, data, _generate_events=True):
 
         log.info('update(%r, %r, %r)' % (entity_type, entity_id, data))
 
+        if _generate_events:
+            old_values = self._store[entity_type].get(entity_id)
+
         # Perform the update.
         entity = self._create_or_update(entity_type, entity_id, data)
+
+        if _generate_events:
+            events.generate_for_update(self, entity, old_values)
 
         # Return a copy with only the updated data in it.
         return dict((k, entity[k]) for k in set(itertools.chain(data, ('type', 'id'))))
@@ -232,7 +249,7 @@ class Shotgun(object):
         return None
 
     def find(self, entity_type, filters, fields=None, order=None,
-        filter_operator=None, limit=0, retired_only=False, page=0):
+        filter_operator=None, limit=500, retired_only=False, page=0):
         """Find and return entities satifying a list of filters.
 
         We currently support deep-linked fields in the return fields, but not
@@ -254,8 +271,17 @@ class Shotgun(object):
         entities = self._store[entity_type].itervalues()
         entities = filter_entities(filters, entities)
 
+        # Very rough paging.
+        start = page * limit
+        entities = entities[start:start + limit]
+
         # Return minimal copies.
-        res = [self._minimal_copy(entity, fields) for entity in entities]
+        res = []
+        for entity in entities:
+            entity = self._minimal_copy(entity, fields)
+            #for field in fields or ():
+            #    entity.setdefault(field, None)
+            res.append(entity)
         log.info('find(%r, %r) -> [%s]' % (entity_type, filters, ', '.join(str(e['id']) for e in res)))
         return res
 

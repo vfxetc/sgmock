@@ -5,7 +5,8 @@ from datetime import datetime, date
 
 from flask import Flask, request, Response, g
 
-from .shotgun import Shotgun, Fault
+from .shotgun import Shotgun
+from .exceptions import Fault, MockError
 
 
 log = logging.getLogger('sgmock')
@@ -67,6 +68,10 @@ def json_api():
         try:
             result = method(method_params)
         except Fault as e:
+            if isinstance(e, MockError):
+                log.error(e.args[0])
+            else:
+                log.warning('Fault [%d]: %s' % (e.code, e.args[0]))
             result = {
                 'exception': True,
                 'error_code': e.code,
@@ -89,11 +94,7 @@ def api3_method(func):
 
 @api3_method
 def info(params):
-    return {
-        's3_uploads_enabled': False,
-        'version': [6, 0, 3],
-        'sgmock': True,
-    }
+    return g.shotgun.info()
 
 
 @api3_method
@@ -101,7 +102,9 @@ def read(params):
     type_ = params['type']
     filters = params['filters']
     fields = params['return_fields']
-    entities = g.shotgun.find(type_, filters, fields)
+    page = params['paging']['current_page']
+    limit = params['paging']['entities_per_page']
+    entities = g.shotgun.find(type_, filters, fields, page=page, limit=limit)
     return {
         'entities': entities,
         'paging_info': {
@@ -115,7 +118,9 @@ def create(params):
     type_ = params['type']
     data = dict((f['field_name'], f['value']) for f in params['fields'])
     return_fields = params['return_fields']
-    entity = g.shotgun.create(type_, data, return_fields)
+    entity = g.shotgun.create(type_, data, return_fields,
+        _generate_events=g.pragmas.get('generate_events', True),
+    )
     return {'results': entity}
 
 
