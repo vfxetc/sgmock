@@ -249,7 +249,7 @@ class Shotgun(object):
         return None
 
     def find(self, entity_type, filters, fields=None, order=None,
-        filter_operator=None, limit=500, retired_only=False, page=0):
+        filter_operator=None, limit=500, retired_only=False, page=1):
         """Find and return entities satifying a list of filters.
 
         We currently support deep-linked fields in the return fields, but not
@@ -272,7 +272,7 @@ class Shotgun(object):
         entities = filter_entities(filters, entities)
 
         # Very rough paging.
-        start = page * limit
+        start = max(0, page - 1) * limit
         entities = entities[start:start + limit]
 
         # Return minimal copies.
