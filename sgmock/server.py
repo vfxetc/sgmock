@@ -1,6 +1,7 @@
 import json
 import os
 import logging
+from datetime import datetime, date
 
 from flask import Flask, request, Response, g
 
@@ -25,6 +26,14 @@ def get_shotgun():
     except KeyError:
         return shotgun_by_namespace.setdefault(namespace, Shotgun())
 
+def json_default(x):
+    if isinstance(x, (datetime, date)):
+        if isinstance(x, datetime):
+            return x.strftime('%Y-%m-%dT%H:%M:%SZ')
+        else:
+            return x.strftime('%Y-%m-%d')
+    else:
+        return x
 
 @app.route('/api3/json', methods=['POST'])
 def json_api():
@@ -65,7 +74,7 @@ def json_api():
             }
 
     if not (isinstance(result, (Response, basestring)) or (isinstance(result, (list, tuple)) and isinstance(result[0], (Response, basestring)))):
-        result = json.dumps(result), 200, [('Content-Type', 'application/json')]
+        result = json.dumps(result, default=json_default), 200, [('Content-Type', 'application/json')]
 
     return result
 
