@@ -18,7 +18,7 @@ app = Flask('sgmock.server')
 shotgun_by_namespace = {}
 
 def get_namespace():
-    return g.pragmas.get('sgmock_namespace') or request.host
+    return g.pragmas.get('sgmock_namespace')
 
 def get_shotgun():
     namespace = get_namespace()
@@ -144,7 +144,7 @@ def delete(params):
 @api3_method
 def clear(params):
     res = count(None)
-    shotgun_by_namespace.pop(get_namespace(), None)
+    g.shotgun.clear()
     return res
 
 

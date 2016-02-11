@@ -38,6 +38,8 @@ class Shotgun(object):
         self.client_caps = None
         self.config = _Config()
 
+        self._generate_events = kwargs.pop('generate_events', True)
+
         # Set everything else to be not implemented.
         def not_implemented(*args, **kwargs):
             raise NotImplementedError()
@@ -212,7 +214,7 @@ class Shotgun(object):
         entity = self._create_or_update(entity_type, None, data)
         if _log:
             log.info('create(%r, %r) -> %d' % (entity_type, data, entity['id']))
-        if _generate_events:
+        if _generate_events and self._generate_events:
             events.generate_for_create(self, entity)
         return self._minimal_copy(entity, itertools.chain(data.iterkeys(), return_fields or ()))
 
@@ -226,7 +228,7 @@ class Shotgun(object):
         # Perform the update.
         entity = self._create_or_update(entity_type, entity_id, data)
 
-        if _generate_events:
+        if _generate_events and self._generate_events:
             events.generate_for_update(self, entity, old_values)
 
         # Return a copy with only the updated data in it.
@@ -267,21 +269,21 @@ class Shotgun(object):
         :return: ``list`` of ``dict``s.
 
         """
-        # Wrap the base entities with all of the filters.
+
         entities = self._store[entity_type].itervalues()
         entities = filter_entities(filters, entities)
 
         # Very rough paging.
+        limit = max(1, min(500, limit))
         start = max(0, page - 1) * limit
-        entities = entities[start:start + limit]
+        entities = itertools.islice(entities, start, start + limit)
 
         # Return minimal copies.
         res = []
         for entity in entities:
             entity = self._minimal_copy(entity, fields)
-            #for field in fields or ():
-            #    entity.setdefault(field, None)
             res.append(entity)
+
         log.info('find(%r, %r) -> [%s]' % (entity_type, filters, ', '.join(str(e['id']) for e in res)))
         return res
 
@@ -351,3 +353,7 @@ class Shotgun(object):
         if entity:
             self._store[entity_type][entity_id] = entity
         return bool(entity)
+
+    def clear(self):
+        self._store.clear()
+        self._deleted.clear()

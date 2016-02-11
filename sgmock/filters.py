@@ -64,7 +64,7 @@ def _compile_condition(condition):
 
 def filter_entities(filters, entities):
     compiled = _compile_filters(filters)
-    return filter(compiled, entities)
+    return (e for e in entities if compiled(e))
 
 
 
