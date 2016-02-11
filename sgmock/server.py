@@ -79,6 +79,9 @@ def json_api():
                 'message': e.args[0],
             }
 
+    if isinstance(result, dict) and 'results' not in result:
+        result = {'results': result}
+    
     if not (isinstance(result, (Response, basestring)) or (isinstance(result, (list, tuple)) and isinstance(result[0], (Response, basestring)))):
         result = json.dumps(result, default=json_default), 200, [('Content-Type', 'application/json')]
 
@@ -125,7 +128,7 @@ def create(params):
     entity = g.shotgun.create(type_, data, return_fields,
         _generate_events=g.pragmas.get('generate_events', True),
     )
-    return {'results': entity}
+    return entity
 
 
 @api3_method
@@ -134,7 +137,7 @@ def update(params):
     id_ = params['id']
     data = dict((f['field_name'], f['value']) for f in params['fields'])
     entity = g.shotgun.update(type_, id_, data)
-    return {'results': entity}
+    return entity
 
 
 @api3_method
