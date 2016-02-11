@@ -2,6 +2,7 @@ import json
 import os
 import logging
 from datetime import datetime, date
+import functools
 
 from flask import Flask, request, Response, g
 
@@ -87,8 +88,10 @@ def json_api():
 
 _api3_methods = {}
 
-def api3_method(func):
-    _api3_methods[func.__name__] = func
+def api3_method(func, name=None):
+    if isinstance(func, basestring):
+        return functools.partial(api3_method, name=func)
+    _api3_methods[name or func.__name__] = func
     return func
 
 
@@ -102,9 +105,10 @@ def read(params):
     type_ = params['type']
     filters = params['filters']
     fields = params['return_fields']
+    retired_only = params['return_only'] == 'retired'
     page = params['paging']['current_page']
     limit = params['paging']['entities_per_page']
-    entities = g.shotgun.find(type_, filters, fields, page=page, limit=limit)
+    entities = g.shotgun.find(type_, filters, fields, page=page, limit=limit, retired_only=retired_only)
     return {
         'entities': entities,
         'paging_info': {
@@ -155,6 +159,10 @@ def count(params):
         if entities:
             res[type_] = len(entities)
     return res
+
+@api3_method('log')
+def log_method(params):
+    log.info(params['message'])
 
 
 def main():

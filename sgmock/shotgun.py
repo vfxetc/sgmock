@@ -80,6 +80,8 @@ class Shotgun(object):
 
     def _minimal_copy(self, entity, fields=None):
         """Get a minimal representation of the given entity; only type and id."""
+        if not entity:
+            return
         minimal = minimize(entity)
         for field in fields or ():
             try:
@@ -107,13 +109,16 @@ class Shotgun(object):
             id_ = link['id']
         except KeyError:
             raise ShotgunError('malformed entity link', link)
-        return self._store[type_].get(id_)
+        return self._store[type_].get(id_) or self._deleted[type_].get(id_)
 
 
     # `entity.Shot.code.more` will return same as `entity.Shot.code`.
     _deep_lookup_re = re.compile(r'^(\w+)\.(\w+)\.([^.]+)')
 
     def _lookup_field(self, entity, field):
+
+        if not entity:
+            return
 
         # Simple fields.
         try:
@@ -269,7 +274,8 @@ class Shotgun(object):
 
         """
 
-        entities = self._store[entity_type].itervalues()
+        store = self._deleted if retired_only else self._store
+        entities = store[entity_type].itervalues()
         entities = filter_entities(filters, entities)
 
         # Very rough paging.
