@@ -106,11 +106,9 @@ class Shotgun(object):
             type_ = link['type']
             id_ = link['id']
         except KeyError:
-            raise ShotgunError('entity does not have type and id; %r' % link)
-        try:
-            return self._store[type_][id_]
-        except KeyError:
-            raise ShotgunError('linked entity does not exist; %r' % link)
+            raise ShotgunError('malformed entity link', link)
+        return self._store[type_].get(id_)
+
 
     # `entity.Shot.code.more` will return same as `entity.Shot.code`.
     _deep_lookup_re = re.compile(r'^(\w+)\.(\w+)\.([^.]+)')
@@ -163,8 +161,9 @@ class Shotgun(object):
     def _reduce_links(self, data):
         if isinstance(data, dict):
             if 'type' in data and 'id' in data:
+                # Check for retirement.
                 if not self._entity_exists(data):
-                    raise ShotgunError('linked entity %r does not exist' % self._minimal(data))
+                    return
                 return self._minimal_copy(data)
             res = {}
             for k, v in data.iteritems():
@@ -229,7 +228,7 @@ class Shotgun(object):
         entity = self._create_or_update(entity_type, entity_id, data)
 
         if _generate_events and self._generate_events:
-            events.generate_for_update(self, entity, old_values)
+            events.generate_for_update(self, entity, old_values, data)
 
         # Return a copy with only the updated data in it.
         return dict((k, entity[k]) for k in set(itertools.chain(data, ('type', 'id'))))
@@ -331,7 +330,7 @@ class Shotgun(object):
 
         return responses
 
-    def delete(self, entity_type, entity_id):
+    def delete(self, entity_type, entity_id, _generate_events=True):
         """Delete a single entity.
 
         This mock does not have retired entities, so once it is deleted an
@@ -342,16 +341,22 @@ class Shotgun(object):
         :return bool: ``True`` if the entity did exist.
 
         """
+
         entity = self._store[entity_type].pop(entity_id, None)
         if entity:
             self._deleted[entity_type][entity_id] = entity
+            if _generate_events and self._generate_events:
+                events.generate_for_delete(self, entity)
         log.info('delete(%r, %r) -> %r' % (entity_type, entity_id, bool(entity)))
         return bool(entity)
 
-    def revive(self, entity_type, entity_id):
+    def revive(self, entity_type, entity_id, _generate_events=True):
         entity = self._deleted[entity_type].pop(entity_id, None)
         if entity:
             self._store[entity_type][entity_id] = entity
+            if _generate_events and self._generate_events:
+                events.generate_for_revive(self, entity)
+        log.info('revive(%r, %r) -> %r' % (entity_type, entity_id, bool(entity)))
         return bool(entity)
 
     def clear(self):
