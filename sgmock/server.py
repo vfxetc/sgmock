@@ -149,6 +149,14 @@ def delete(params):
 
 
 @api3_method
+def revive(params):
+    type_ = params['type']
+    id_ = params['id']
+    res = g.shotgun.revive(type_, id_)
+    return res
+
+
+@api3_method
 def clear(params):
     res = count(None)
     g.shotgun.clear()
