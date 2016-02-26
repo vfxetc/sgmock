@@ -122,7 +122,7 @@ class InFilter(object):
         self.field = field
         self.values = set(values)
 
-    def __call__(self, entity_iter):
+    def __call__(self, entity):
         return entity.get(self.field) in self.values
 
 
