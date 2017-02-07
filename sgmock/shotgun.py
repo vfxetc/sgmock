@@ -5,6 +5,7 @@ import datetime
 import re
 import itertools
 import logging
+import functools
 
 import shotgun_api3
 
@@ -42,10 +43,10 @@ class Shotgun(object):
 
         # Set everything else to be not implemented.
         def not_implemented(*args, **kwargs):
-            raise NotImplementedError()
+            raise NotImplementedError(kwargs.get('__mock_name__'))
         for name in dir(shotgun_api3.Shotgun):
             if not hasattr(self, name):
-                setattr(self, name, not_implemented)
+                setattr(self, name, functools.partial(not_implemented, __mock_name__=name))
 
         self._store = collections.defaultdict(dict)
         self._ids = collections.defaultdict(int)
@@ -368,3 +369,8 @@ class Shotgun(object):
     def clear(self):
         self._store.clear()
         self._deleted.clear()
+
+    def share_thumbnail(self, *args, **kwargs):
+        # TODO.
+        pass
+
