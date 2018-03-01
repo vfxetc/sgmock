@@ -182,13 +182,27 @@ class Shotgun(object):
 
         # Get or create the entity.
         if entity_id is None:
+            # Generate a default new sequential id
+            newId = self._ids[entity_type] + 1
+            if 'id' in data:
+                # for more complicated unit tests its nice to be able to create
+                # records with known id's.
+                if data['id'] in self._store[entity_type]:
+                    msg = 'there is already a "{type}" record with the "id" {id}'
+                    raise ShotgunError(msg.format(type=entity_type, id=data['id']))
+                else:
+                    # If data contains a id and that id is not already used,
+                    # create the new entity with the passed in id.
+                    newId = data['id']
             entity = {
                 'type': entity_type,
-                'id': self._ids[entity_type] + 1,
+                'id': newId,
                 'created_at': datetime.datetime.utcnow(),
                 #'created_by': self._creator,
             }
-            self._ids[entity_type] = entity['id']
+            # Update the id index to the new id only if its larger than
+            # the previous value.
+            self._ids[entity_type] = max(entity['id'], self._ids[entity_type])
             self._store[entity_type][entity['id']] = entity
         else:
             # TODO: Handle this gracefully.
