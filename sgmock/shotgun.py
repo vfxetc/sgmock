@@ -5,6 +5,7 @@ import datetime
 import re
 import itertools
 import logging
+import json
 
 import shotgun_api3
 
@@ -382,3 +383,94 @@ class Shotgun(object):
     def clear(self):
         self._store.clear()
         self._deleted.clear()
+
+    def sgmock_json_dump(self, *args, **kwargs):
+        """ Saves the current state of the db to json.
+
+        This converts datetime objects to isoformat strings(including
+        trailing z) so they can be saved to json. sgmock_json_load
+        will restore these strings to datetime objects. All args and
+        kwargs are passed to json.dump. Do not pass a object to be
+        serialized it is provided automatically.
+
+        :param \*args: All args are passed to json.load
+        :param \**kwargs: All kwargs are passed to json.load
+        """
+        if kwargs.get('default', None) is None:
+            def serialize(value):
+                """ Serialize objects that are not supported by json.
+                """
+                if isinstance(value, datetime.datetime):
+                    return value.isoformat() + 'Z'
+                elif isinstance(value, datetime.date):
+                    return value.isoformat()
+                return json.JSONEncoder().default(value)
+            kwargs['default']=serialize
+        json.dump(dict(self._store), *args, **kwargs)
+
+    def sgmock_json_load(self, *args, **kwargs):
+        """ Load the contents of json over the current entities.
+
+        Replaces any records with the contents of the json file object.
+        Automatically converts isoformat datetime strings(including
+        trailing z) to datetime objects.
+
+        :param \*args: All args are passed to json.load
+        :param \**kwargs: All kwargs are passed to json.load
+        """
+        try:
+            strtype = basestring
+        except NameError:
+            # using Python 3
+            strtype = str
+
+        objects = json.load(*args, **kwargs)
+        entity_ids = collections.defaultdict(int)
+
+        # the loaded json data is not exactly what we need for self._store
+        for entity_type, entities in objects.items():
+            # json keys must be strings.
+            ids = set()
+            for sid in entities.keys():
+                # Convert the string id from json to the expected int value
+                entity_id = int(sid)
+                ids.add(entity_id)
+                entities[entity_id] = entities.pop(sid)
+
+                for field in entities[entity_id]:
+                    value = entities[entity_id][field]
+                    if isinstance(value, strtype):
+                        # Convert isoformat datestrings to dattime objects
+                        pattern = (
+                            # Date
+                            '(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})'
+                            # Time
+                            '(?:T(?P<hour>\d{2}):(?P<minute>\d{2}):'
+                            '(?P<second>\d{2})(?:.(?P<microsecond>\d{6}))?Z)?'
+                        )
+                        match = re.match(pattern, value)
+                        if match:
+                            groupdict = match.groupdict()
+                            if groupdict['hour'] is None:
+                                # It's a date object
+                                createClass = datetime.date
+                                groupdict.pop('hour')
+                                groupdict.pop('minute')
+                                groupdict.pop('second')
+                                groupdict.pop('microsecond')
+                            else:
+                                # its a datetime object
+                                createClass = datetime.datetime
+
+                            entities[entity_id][field] = createClass(
+                                **{k: int(v) for k, v in groupdict.items()}
+                            )
+
+            # Store the largest entity id so the index is correct.
+            entity_ids[entity_type] = max(ids)
+        # Store the json data to the existing _store
+        self._store = collections.defaultdict(dict, objects)
+        # Update the index so new entities get a valid id.
+        self._ids = entity_ids
+        # clear the other container variables so we start fresh
+        self._deleted = collections.defaultdict(dict)
