@@ -467,7 +467,8 @@ class Shotgun(object):
                             )
 
             # Store the largest entity id so the index is correct.
-            entity_ids[entity_type] = max(ids)
+            if ids:
+                entity_ids[entity_type] = max(ids)
         # Store the json data to the existing _store
         self._store = collections.defaultdict(dict, objects)
         # Update the index so new entities get a valid id.
