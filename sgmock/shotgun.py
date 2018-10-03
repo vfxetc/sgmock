@@ -266,7 +266,7 @@ class Shotgun(object):
         :param list fields: Which fields to return.
         :param order: Ignored.
         :param filter_operator: Ignored.
-        :param limite: Ignored.
+        :param limit: Ignored.
         :param retired_only: Ignored.
         :param page: Ignored.
 

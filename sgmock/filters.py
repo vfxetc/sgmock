@@ -29,20 +29,20 @@ def Or(filters):
 def _compile_filters(filters):
 
     if isinstance(filters, dict):
-        op = filters.get('logical_operator', 'and')
-        conditions = filters['conditions']
+        op = filters.get('filter_operator', 'all')
+        conditions = filters['filters']
     else:
-        op = 'and'
+        op = 'all'
         conditions = filters
 
-    op_cls = Or if op == 'or' else And
+    op_cls = Or if op == 'any' else And
     return op_cls([_compile_condition(f) for f in conditions])
 
 
 def _compile_condition(condition):
 
     if isinstance(condition, dict):
-        if 'logical_operator' in condition:
+        if 'filter_operator' in condition:
             return _compile_filters(condition)
 
         op_name = condition['relation']
