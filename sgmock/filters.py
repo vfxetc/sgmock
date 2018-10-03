@@ -35,7 +35,20 @@ def _compile_filters(filters):
         op = 'all'
         conditions = filters
 
-    op_cls = Or if op == 'any' else And
+    # While the documentation for shotgun_api complex filters describes the
+    # use of `filter_operator` being one of `"any"` or `"all"` (the default),
+    # the actual Shotgun server accepts a `logical_operator` of `'or'` or `'and'`
+    # (respectively), and `shotgun_api3` actually supports both. And so we do
+    # as well.
+    # See: http://developer.shotgunsoftware.com/python-api/reference.html#complex-filters
+    # See https://github.com/shotgunsoftware/python-api/blob/b13dd5d03b6b3c7bb946f77a9eaff7c3dc7ff324/shotgun_api3/shotgun.py#L4045-L4062
+    if op in ('any', 'or'):
+        op_cls = Or
+    elif op in ('all', 'and'):
+        op_cls = And
+    else:
+        raise ValueError("Invalid filter_operator {}".format(op))
+
     return op_cls([_compile_condition(f) for f in conditions])
 
 

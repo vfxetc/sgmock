@@ -3,7 +3,8 @@ from common import *
 
 class TestComplexFilterFind(TestCase):
 
-    def test_thing(self):
+    def test_basics(self, op_all='all', op_any='any'):
+
         sg = Shotgun()
         nameA = '{}_ProjectA'.format(mini_uuid())
         a = sg.create('Project', dict(name=nameA, sg_status='Bid'))
@@ -15,7 +16,7 @@ class TestComplexFilterFind(TestCase):
         # Using AND as filter_operator
         query = [
             {
-                'filter_operator': 'all',
+                'filter_operator': op_all,
                 'filters': [
                     ['name', 'is', nameB],
                     ['sg_status', 'is', 'Bid'],
@@ -29,7 +30,7 @@ class TestComplexFilterFind(TestCase):
         # Using OR as filter_operator
         query = [
             {
-                'filter_operator': 'any',
+                'filter_operator': op_any,
                 'filters': [
                     ['name', 'is', nameB],
                     ['sg_status', 'is', 'Production'],
@@ -45,7 +46,7 @@ class TestComplexFilterFind(TestCase):
         query = [
             ['sg_status', 'is', 'Bid'],
             {
-                'filter_operator': 'any',
+                'filter_operator': op_any,
                 'filters': [
                     ['name', 'is', nameA],
                     ['name', 'is', nameB],
@@ -57,3 +58,7 @@ class TestComplexFilterFind(TestCase):
         # NOTE: sgmock's find ignores order and always seems to return in index order
         self.assertSameEntity(results[0], a)
         self.assertSameEntity(results[1], b)
+
+    def test_synonyms(self):
+        # Assert the synonyms of the operators work too.
+        self.test_basics('and', 'or')
