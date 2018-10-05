@@ -32,7 +32,7 @@ class TestComplexFilterFind(TestCase):
             {
                 'filter_operator': op_any,
                 'filters': [
-                    ['name', 'is', nameB],
+                    ['name', 'is', nameA],
                     ['sg_status', 'is', 'Production'],
                 ]
             }

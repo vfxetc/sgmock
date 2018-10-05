@@ -36,8 +36,8 @@ class TestCase(BaseTestCase):
         if not errors:
             if a['type'] != b['type']:
                 errors.append('types do not match; %r != %r' % (a['type'], b['type']))
-                if a['id'] != b['id']:
-                    errors.append('ids do not match; %r != %r' % (a['id'], b['id']))
+            elif a['id'] != b['id']:
+                errors.append('ids do not match; %r != %r' % (a['id'], b['id']))
         
         if errors:
             self.fail(msg or '; '.join(errors))
