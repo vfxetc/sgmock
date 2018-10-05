@@ -65,3 +65,12 @@ class TestBasicFind(TestCase):
         self.assertEqual(len(c), 1)
         self.assertSameEntity(b, c[0])
         self.assertEqual(c[0]['name'], nameB)
+
+    def test_ends_with(self):
+        sg = Shotgun()
+        nameA, a, nameB, b = self.createTwoProjects(sg)
+        filters = [['name', 'ends_with', '_ProjectB']]
+        c = sg.find('Project', filters, ['name'])
+        self.assertEqual(len(c), 1)
+        self.assertSameEntity(b, c[0])
+        self.assertEqual(c[0]['name'], nameB)
