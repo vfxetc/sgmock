@@ -155,3 +155,10 @@ class StartsWithFilter(ScalarFilter):
 
     def test(self, value, field):
         return field.startswith(value)
+
+
+@register('ends_with')
+class EndsWithFilter(ScalarFilter):
+
+    def test(self, value, field):
+        return field.endswith(value)
