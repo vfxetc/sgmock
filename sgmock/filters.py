@@ -29,10 +29,16 @@ def Or(filters):
 def _compile_filters(filters):
 
     if isinstance(filters, dict):
-        op = filters.get('filter_operator', 'all')
-        conditions = filters['filters']
+        try:
+            # New style
+            op = filters['logical_operator']
+            conditions = filters['conditions']
+        except KeyError:
+            # Old style
+            op = filters.get('filter_operator', 'and')
+            conditions = filters['filters']
     else:
-        op = 'all'
+        op = 'and'
         conditions = filters
 
     # While the documentation for shotgun_api complex filters describes the
